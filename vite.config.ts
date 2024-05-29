@@ -33,12 +33,4 @@ const jisonPlugin = () => {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [jisonPlugin()],
-  build: {
-    sourcemap: true,
-  },
-  server: {
-    watch: {
-      usePolling: true,
-    },
-  },
 });
