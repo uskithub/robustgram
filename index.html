@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -11,13 +11,23 @@
       <h1>State diagram demos</h1>
       <h2>Very simple showing change from State1 to State2</h2>
       <pre class="mermaid">
-        ---
-        title: Very simple diagram
-        ---
         stateDiagram
           accTitle: This is the accessible title
           accDescr:This is an accessible description
           State1 --> State2
+      </pre>
+      <pre class="mermaid">
+        robustive
+          A[User] --- B[iPhone's home] \
+                  -->[User taps this app's icon] C[App checks if the user has a session](checkSession) \
+                  -->[if so](true) C[App starts synchronizing user's presence state](startSyncPresence) \
+                  --> C[App starts observing user information](startObservingUserInfo) \
+                        --- E[UserInfo] \
+                  --> C[App updates signin status to 'signing-in'](updateStatus) \
+                  --> C[App presents Home View](presentHomeView) \
+                  --> B[Home]
+  
+          $checkSession -->[if not](false) U[User signs up](SignUp);
       </pre>
     </div>
     <script type="module" src="/src/main.ts"></script>

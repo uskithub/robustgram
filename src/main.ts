@@ -4,9 +4,11 @@ import "./style.css";
 import { DiagramDefinition, registerDiagram } from "./diagram";
 import { run } from "./render";
 import { RobustiveDiagram } from "./robustive.js";
+import { StateDiagram } from "./state/state.js";
 
 export const initialize = () => {
   registerDiagram("robustive", new RobustiveDiagram());
+  registerDiagram("stateDiagram", new StateDiagram());
 };
 
 if (typeof document !== "undefined") {

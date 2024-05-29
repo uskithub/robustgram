@@ -4,9 +4,9 @@ import {
   DiagramDefinition,
   DiagramRenderer,
   ParserDefinition,
-} from "./diagram";
+} from "../diagram";
 // @ts-ignore: JISON doesn't support types
-import parser from "./robustive.jison";
+import parser from "./stateDiagram.jison";
 
 class BaseDiagramDB implements DiagramDB {
   private accTitle: string = "";
@@ -32,9 +32,9 @@ class BaseDiagramDB implements DiagramDB {
   };
 }
 
-class RobustiveDB extends BaseDiagramDB {}
+class StateDB extends BaseDiagramDB {}
 
-class RobustiveRenderer implements DiagramRenderer {
+class StateRenderer implements DiagramRenderer {
   constructor(private db: DiagramDB) {}
   draw(text: string, id: string, version: string): Promise<void>;
   draw(text: string, id: string, version: string, db: DiagramDB): Promise<void>;
@@ -49,16 +49,16 @@ class RobustiveRenderer implements DiagramRenderer {
   }
 }
 
-export class RobustiveDiagram implements DiagramDefinition {
+export class StateDiagram implements DiagramDefinition {
   parser: ParserDefinition;
   db: DiagramDB;
   renderer: DiagramRenderer;
 
   constructor() {
-    const db = new RobustiveDB();
+    const db = new StateDB();
     parser.yy = db;
     this.parser = parser;
     this.db = db;
-    this.renderer = new RobustiveRenderer(db);
+    this.renderer = new StateRenderer(db);
   }
 }

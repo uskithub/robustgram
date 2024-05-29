@@ -2,8 +2,10 @@ import type * as d3 from "d3";
 import { select } from "d3";
 import { compile, serialize, stringify } from "stylis";
 import { version } from "../package.json";
-import { Diagram } from "./diagram";
+import { Diagram, registerDiagram } from "./diagram";
 import { cleanup } from "./cleanup";
+import { RobustiveDiagram } from "./robustive";
+import { StateDiagram } from "./state/state";
 
 let cnt = 0;
 export const generateId = () => {
@@ -338,6 +340,9 @@ const render = async (
   text: string,
   svgContainingElement: Element
 ): Promise<RenderResult> => {
+  registerDiagram("robustive", new RobustiveDiagram());
+  registerDiagram("stateDiagram", new StateDiagram());
+
   const idSelector = "#" + id;
   const enclosingDivID = "d" + id;
   const enclosingDivID_selector = "#" + enclosingDivID;
@@ -372,8 +377,9 @@ const render = async (
   try {
     diag = await Diagram.fromText(text, { title: "dummy" });
   } catch (error) {
-    diag = await Diagram.fromText("error");
+    console.error("Error parsing text", error);
     parseEncounteredException = error;
+    throw error;
   }
 
   // Get the temporary div element containing the svg
@@ -477,7 +483,7 @@ export const run = async (querySelector: string = ".mermaid") => {
         bindFunctions(element);
       }
     } catch (error) {
-      console.error(error, errors);
+      // console.error(error, errors);
     }
   }
   if (errors.length > 0) {

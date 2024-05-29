@@ -22,7 +22,9 @@ export interface DiagramRenderer {
 }
 
 export interface ParserDefinition {
+  yy: DiagramDB;
   parse: (text: string) => void | Promise<void>;
+  parser?: { yy: DiagramDB };
 }
 
 export interface DiagramDefinition {
@@ -61,14 +63,38 @@ const encodeEntities = (text: string): string => {
     });
 };
 
-export class Diagram {
-  public static async fromText(text: string, metadata: DiagramMetadata = {}) {
-    console.log("========= fromlllText =========", text);
+const frontMatterRegex = /^-{3}\s*[\n\r](.*?)[\n\r]-{3}\s*[\n\r]+/s;
+const directiveRegex =
+  /%{2}{\s*(?:(\w+)\s*:|(\w+))\s*(?:(\w+)|((?:(?!}%{2}).|\r?\n)*))?\s*(?:}%{2})?/gi;
+const anyCommentRegex = /\s*%%.*\n/gm;
 
-    const type = "robustive";
+export class Diagram {
+  public static detectType(text: string): string {
+    text = text
+      .replace(frontMatterRegex, "")
+      .replace(directiveRegex, "")
+      .replace(anyCommentRegex, "\n");
+
+    if (/^\s*stateDiagram/.test(text)) {
+      return "stateDiagram";
+    } else if (/^\s*robustive/.test(text)) {
+      return "robustive";
+    } else {
+      throw new Error(
+        `No diagram type detected matching given configuration for text: ${text}`
+      );
+    }
+  }
+
+  public static async fromText(text: string, metadata: DiagramMetadata = {}) {
+    console.log("========= fromText =========", text);
+
+    const type = Diagram.detectType(text);
     text = encodeEntities(text) + "\n";
 
-    const { db, parser, renderer } = diagrams[type];
+    const d = diagrams[type];
+
+    const { db, parser, renderer } = d;
 
     db.clear?.();
 
@@ -76,7 +102,16 @@ export class Diagram {
     if (metadata.title) {
       db.setDiagramTitle?.(metadata.title);
     }
-    await parser.parse(text);
+
+    try {
+      console.log("========= parser start =========", parser);
+      await parser.parse(text);
+      console.log("========= parse end =========", db);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
     return new Diagram(type, text, db, parser, renderer);
   }
 
@@ -89,6 +124,7 @@ export class Diagram {
   ) {}
 
   async render(id: string, version: string): Promise<void> {
+    console.log("========= render =========", this.text, id, version, this.db);
     await this.renderer.draw(this.text, id, version, this.db);
   }
 
