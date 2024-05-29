@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + Vue + TS</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>State diagram demos</h1>
+      <h2>Very simple showing change from State1 to State2</h2>
+      <pre class="mermaid">
+        ---
+        title: Very simple diagram
+        ---
+        stateDiagram
+          accTitle: This is the accessible title
+          accDescr:This is an accessible description
+          State1 --> State2
+      </pre>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
