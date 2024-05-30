@@ -32,7 +32,11 @@ class BaseDiagramDB implements DiagramDB {
   };
 }
 
-class RobustiveDB extends BaseDiagramDB {}
+class RobustiveDB extends BaseDiagramDB {
+  setRootDoc = (txt: string): void => {
+    console.log("========= setRootDoc =========", txt);
+  };
+}
 
 class RobustiveRenderer implements DiagramRenderer {
   constructor(private db: DiagramDB) {}
