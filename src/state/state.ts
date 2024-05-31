@@ -6,7 +6,8 @@ import {
   ParserDefinition,
 } from "../diagram";
 // @ts-ignore: JISON doesn't support types
-import parser from "./stateDiagram.jison";
+import parser from "./stateDiagram.min.jison";
+// import parser from "./stateDiagram.jison";
 
 class BaseDiagramDB implements DiagramDB {
   private accTitle: string = "";
@@ -27,7 +28,6 @@ class BaseDiagramDB implements DiagramDB {
    * @param txt
    */
   setAccTitle = (txt: string): void => {
-    console.log("========= setAccTitle =========", txt);
     this.accTitle = this.sanitizeText(txt).replace(/^\s+/g, "");
   };
 }

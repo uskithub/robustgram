@@ -1,25 +1,19 @@
-/* レキシカルセクションの開始。レキシカルアナライザは入力テキストをトークンと呼ばれる意味のある単位に分割する */
 %lex
 
-// Special states for recognizing aliases
-%x ACTOR
-
-
-%% /* アナライザの定義終わり。構文解析規則の開始 */
-
-\%\%(?!\{)[^\n]*          /* skip comments */
-[^\}]\%\%[^\n]*           /* skip comments */{ /*console.log('Crap after close');*/ }
-
-[\n]+                     return 'NEW_LINE';
-[\s]+                     /* skip all whitespace */
+%%
 
 "robustive"\s+            { /* console.log('Got Robustness Diagram', yytext,'#'); */ return 'RD'; }
+[\s]+                     /* skip all whitespace */
+[\n]+                     return 'NL';
+(A|B|C|E|U)\[.+?\]        return 'object';
 
+"---"                     return '---';
+"-->"                     return '-->';
 
-.+                        return 'LABEL'
-[a-zA-Z0-9_]+             return 'IDENTIFIER'
-"\\n"                     return 'CONTINUATION_LINE'
-<<EOF>>                   return 'NEW_LINE';
+"A"                       return 'ACTOR';
+"["                       return '[';
+"]"                       return ']';
+.+                        return 'LABRL';
 
 /lex
 
@@ -28,41 +22,37 @@
 %%
 
 start
-    : NEW_LINE start
-    | RD usecase { /* console.log('--> Root document', $2); */   yy.setRootDoc($2); return $2; }
+    : NL start
+    | RD usecase { yy.setRootDoc($2); return $2; }
     ;
 
 usecase
-    : /* empty */ { /*console.log('empty document'); */ $$ = [] }
+    : /* empty */ { console.log('★empty'); $$ = [] }
     | usecase line {
         if ($2 != 'nl') {
-            /* console.log(' document: 1: ', $1, ' pushing 2: ', $2); */
+            console.log('★if [usecase]:', $1, ' [line]:', $2);
             $1.push($2);
             $$ = $1;
         } else {
-            $$ = [$2];
+            console.log('★else [usecase]:', $1, ' [line]:', $2);
         }
     }
     ;
 
 line
-	: scenaria { $$ = $1 }
-	| NEW_LINE { $$='nl';}
+	: scenario { 
+        $$ = $1;
+        console.log('★[line] is [scenario]:', $1);
+    }
+	| NL { $$='nl'; }
 	;
 
-scenaria
-    : object RELATION object CONTINUATION_LINE
-    | ARROW '[' LABEL ']' object CONTINUATION_LINE
-    | RELATION object CONTINUATION_LINE
-    | ARROW '[' LABEL ']' object
+scenario
+    : object '---' object {
+        console.log('★[scenario]:', $1, $2, $3);
+    }
     ;
 
-object
-    : 'A' '[' LABEL ']'
-    | 'B' '[' LABEL ']'
-    | 'C' '[' LABEL ']' '(' IDENTIFIER ')'
-    | 'E' '[' LABEL ']'
-    | 'U' '[' LABEL ']'
-    ;
+
 
 %%
