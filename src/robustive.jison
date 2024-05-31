@@ -13,7 +13,7 @@
 "A"                       return 'ACTOR';
 "["                       return '[';
 "]"                       return ']';
-.+                        return 'LABRL';
+.+                        return 'LABEL';
 
 /lex
 
@@ -48,11 +48,34 @@ line
 	;
 
 scenario
-    : object '---' object {
-        console.log('★[scenario]:', $1, $2, $3);
+    : object scenario {
+        /* 始まりが決まる*/
+        console.log('★beginWith:', $1, $2);
+        $$ = { from:$1, scenario: $2 };
+    }
+    | '---' scenario {
+        console.log('★relation:', $1, $2);
+        $$ = { reateion: $1, scenario: $2 };
+    }
+    | '---' object {
+        console.log('★relation:', $1, ' with', $2);
+        $$ = { reateion: $1, to: $2 };
     }
     ;
 
-
+object
+    : A '[' LABEL ']' {
+        console.log('★[object] is [ACTOR]:', $1, $3);
+        $$ = { type: $1, name: $3 };
+    }
+    | B '[' LABEL ']' {
+        console.log('★[object] is [object]:', $1, $3);
+        $$ = { from: $1, to: $3 };
+    }
+    | C '[' LABEL ']' {
+        console.log('★[object] is [object]:', $1, $3);
+        $$ = { from: $1, to: $3 };
+    }
+    ;
 
 %%
