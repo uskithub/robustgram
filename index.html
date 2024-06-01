@@ -10,13 +10,17 @@
     <div id="app">
       <h1>State diagram demos</h1>
       <h2>Very simple showing change from State1 to State2</h2>
-      <pre class="mermaid">
+      <pre class="">
         stateDiagram
           A[hoge] --> B[fuga]
       </pre>
       <pre class="mermaid">
         robustive
-          A[User] --- B[iPhone]
+          A[User] --- B[iPhone's home] 
+                  --> C[App checks if the user has a session](checkSession)
+                  --- E[uuid]
+                  --- E[name]
+                  --> B[ラベル付き矢印から]
       </pre>
       <pre class="">
         robustive

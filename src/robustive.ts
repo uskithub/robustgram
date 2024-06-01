@@ -8,6 +8,18 @@ import {
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
 
+type _Relation = {
+  relationship: RobustiveRelationType;
+  object: _Object;
+};
+
+type _Object = {
+  type: RobustiveObjectType;
+  text: string;
+  alias?: string;
+  relations: _Relation[];
+};
+
 class BaseDiagramDB implements DiagramDB {
   private accTitle: string = "";
 
@@ -53,12 +65,20 @@ type RobustiveRelationType =
   (typeof RobustiveRelationType)[keyof typeof RobustiveRelationType];
 
 class RobustiveObject {
-  constructor(private _type: RobustiveObjectType, private _id: string) {}
+  constructor(
+    private _type: RobustiveObjectType,
+    private _text: string,
+    private _alias?: string
+  ) {}
   get type(): string {
     return this._type;
   }
-  get id(): string {
-    return this._id;
+  get text(): string {
+    return this._text;
+  }
+
+  get aliaas(): string | undefined {
+    return this._alias;
   }
 }
 class Relation {
@@ -91,13 +111,16 @@ class RobustiveDB extends BaseDiagramDB {
     console.log("========= setRootDoc =========", txt);
   };
 
-  beginWithActor(id: string): void {
+  beginWithActor = (id: string): void => {
     console.log("=== beginWithActor:", id);
     const a = new RobustiveObject(RobustiveObjectType.Actor, id);
     this.idMap[id] = a;
-  }
+  };
 
-  addRelationActorWithBoundary(actorId: string, boundaryId: string): void {
+  addRelationActorWithBoundary = (
+    actorId: string,
+    boundaryId: string
+  ): void => {
     console.log("=== addRelationActorWithBoundary:", actorId, boundaryId);
 
     const r = new Relation(RobustiveRelationType.Related, actorId, boundaryId);
@@ -107,7 +130,7 @@ class RobustiveDB extends BaseDiagramDB {
 
     const b = new RobustiveObject(RobustiveObjectType.Boundary, boundaryId);
     this.idMap[boundaryId] = b;
-  }
+  };
 
   addRelationBounderyWithController(
     boundaryId: string,

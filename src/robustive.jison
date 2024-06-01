@@ -1,19 +1,30 @@
 %lex
 
+
+%options case-insensitive
+
+// Special states for recognizing aliases
+%x ALIAS
+
 %%
 
 "robustive"\s+            { /* console.log('Got Robustness Diagram', yytext,'#'); */ return 'RD'; }
 [\s]+                     /* skip all whitespace */
 [\n]+                     return 'NL';
-(A|B|C|E|U)\[.+?\]        return 'object';
 
-"---"                     return '---';
-"-->"                     return '-->';
+"---"                     return 'RELATED';
+"-->"                     return 'SEQUENCIAL';
 
-"A"                       return 'ACTOR';
-"["                       return '[';
-"]"                       return ']';
-.+                        return 'LABEL';
+"A["                      return 'ACTOR';
+"B["                      return 'BOUNDARY';
+"C["                      return 'CONTROLLER';
+"E["                      return 'ENTITY';
+"U["                      return 'USECASE';
+"]("                      { this.pushState('ALIAS'); return 'TEXT_END_ALIAS_START'; }
+"]"                       return 'TEXT_END';
+")"                       return 'ALIAS_END';
+[^\[\]]+                  return 'TEXT';
+<ALIAS>[a-zA-Z0-9_]+      { this.popState(); return 'ALIAS'; }
 
 /lex
 
@@ -48,33 +59,78 @@ line
 	;
 
 scenario
-    : object scenario {
+    : object leftovers {
         /* 始まりが決まる*/
-        console.log('★beginWith:', $1, $2);
-        $$ = { from:$1, scenario: $2 };
+        console.log('★beginWith: object=',$1, 'leftovers=', $2);
+        if ($1.relations) {
+            $1.relations.push($2);
+        } else {
+            $1.relations = [$2];
+        }
+        // yy.beginWithActor($1.text);
+        // yy.addRelationActorWithBoundary($1.text, $2.to.text);
+        $$ = $1;
     }
-    | '---' scenario {
-        console.log('★relation:', $1, $2);
-        $$ = { reateion: $1, scenario: $2 };
+    ;
+
+leftovers
+    : RELATED object {
+        console.log('1 related with', $2);
+        const relations1 = [{ type: 'related', to: $2 }];
+        $$ = relations1;
     }
-    | '---' object {
-        console.log('★relation:', $1, ' with', $2);
-        $$ = { reateion: $1, to: $2 };
+    | SEQUENCIAL object {
+        console.log('2 next in order is', $2);
+        const relations2 = [{ type: 'sequential', to: $2 }];
+        $$ = relations2;
+    }
+    | RELATED object leftovers {
+        console.log('3 related with', $2, $3);
+        if ($2.type === 'entity') {
+            const relation = [{ type: 'related', to: $2 }].concat($3);
+            $$ = relation;
+        } else {
+            if ($2.relations) {
+                $2.relations.concat($3);
+            } else {
+                $2.relations = $3;
+            }
+            const relation = [{ type: 'related', to: $2 }];
+            $$ = relation;
+        }
+    }
+    | SEQUENCIAL object leftovers {
+        console.log('4 next in order is', $2);
+        if ($2.relations) {
+            $2.relations.concat($3);
+        } else {
+            $2.relations = $3;
+        }
+        const relation4 = { type: 'sequential', to: $2 };
+        $$ = relation4;
     }
     ;
 
 object
-    : A '[' LABEL ']' {
-        console.log('★[object] is [ACTOR]:', $1, $3);
-        $$ = { type: $1, name: $3 };
+    : ACTOR TEXT TEXT_END {
+        console.log(`★[object] is Actor labeled "${$2}".`);
+        const object1 = { type: 'actor', text: $2 };
+        $$ = object1;
     }
-    | B '[' LABEL ']' {
-        console.log('★[object] is [object]:', $1, $3);
-        $$ = { from: $1, to: $3 };
+    | BOUNDARY TEXT TEXT_END {
+        console.log(`★[object] is Boundary labeled "${$2}".`);
+        const object2 = { type: 'boundary', text: $2 };
+        $$ = object2;
     }
-    | C '[' LABEL ']' {
-        console.log('★[object] is [object]:', $1, $3);
-        $$ = { from: $1, to: $3 };
+    | CONTROLLER TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
+        console.log(`★[object] is Controller labeled "${$2}" and has an alias "${$4}".`);
+        const object3 = { type: 'controller', text: $2, alias: $4 };
+        $$ = object3;
+    }
+    | ENTITY TEXT TEXT_END {
+        console.log(`★[object] is Entity labeled "${$2}".`);
+        const object4 = { type: 'entity', text: $2 };
+        $$ = object4;
     }
     ;
 
