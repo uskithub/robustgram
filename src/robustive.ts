@@ -9,8 +9,9 @@ import {
 import parser from "./robustive.jison";
 
 type _Relation = {
-  relationship: RobustiveRelationType;
-  object: _Object;
+  type: RobustiveRelationType;
+  condition?: string;
+  to: _Object;
 };
 
 type _Object = {

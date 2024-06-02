@@ -13,6 +13,7 @@
 [\n]+                     return 'NL';
 
 "---"                     return 'RELATED';
+"-->["                    return 'CONDITIONAL';
 "-->"                     return 'SEQUENCIAL';
 
 "A["                      return 'ACTOR';
@@ -74,20 +75,15 @@ scenario
     ;
 
 leftovers
-    : RELATED object {
+    : relation object {
         console.log('1 related with', $2);
-        const relations1 = [{ type: 'related', to: $2 }];
+        const relations1 = [{ ...$1, to: $2 }];
         $$ = relations1;
     }
-    | SEQUENCIAL object {
-        console.log('2 next in order is', $2);
-        const relations2 = [{ type: 'sequential', to: $2 }];
-        $$ = relations2;
-    }
-    | RELATED object leftovers {
+    | relation object leftovers {
         console.log('3 related with', $2, $3);
         if ($2.type === 'entity') {
-            const relation = [{ type: 'related', to: $2 }].concat($3);
+            const relation = [{ ...$1, to: $2 }].concat($3);
             $$ = relation;
         } else {
             if ($2.relations) {
@@ -95,19 +91,21 @@ leftovers
             } else {
                 $2.relations = $3;
             }
-            const relation = [{ type: 'related', to: $2 }];
+            const relation = [{ ...$1, to: $2 }];
             $$ = relation;
         }
     }
-    | SEQUENCIAL object leftovers {
-        console.log('4 next in order is', $2);
-        if ($2.relations) {
-            $2.relations.concat($3);
-        } else {
-            $2.relations = $3;
-        }
-        const relation4 = { type: 'sequential', to: $2 };
-        $$ = relation4;
+    ;
+
+relation
+    : RELATED {
+        $$ = { type: 'related' };
+    }
+    | SEQUENCIAL {
+        $$ = { type: 'sequential' };
+    }
+    | CONDITIONAL TEXT TEXT_END {
+        $$ = { type: 'conditional', condition: $2 };
     }
     ;
 
