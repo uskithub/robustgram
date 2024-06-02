@@ -105,8 +105,58 @@ class Relation {
 }
 
 class RobustiveDB extends BaseDiagramDB {
-  private idMap: Record<string, RobustiveObject> = {};
+  private _objectMap: {
+    actor: Record<string, RobustiveObject>;
+    boundary: Record<string, RobustiveObject>;
+    controller: Record<string, RobustiveObject>;
+    entity: Record<string, RobustiveObject>;
+    usecase: Record<string, RobustiveObject>;
+  } = {
+    actor: {},
+    boundary: {},
+    controller: {},
+    entity: {},
+    usecase: {},
+  };
   private relations: Relation[] = [];
+
+  get objectMap() {
+    return this._objectMap;
+  }
+
+  addObject = (
+    type: RobustiveObjectType,
+    text: string,
+    alias?: string
+  ): void => {
+    switch (type) {
+      case RobustiveObjectType.Actor:
+        if (this._objectMap.actor[text] !== undefined) return;
+        this._objectMap.actor[text] = new RobustiveObject(type, text);
+        break;
+      case RobustiveObjectType.Boundary:
+        if (this._objectMap.boundary[text] !== undefined) return;
+        this._objectMap.boundary[text] = new RobustiveObject(type, text);
+        break;
+      case RobustiveObjectType.Controller:
+        if (alias === undefined) return;
+        if (this._objectMap.controller[alias] !== undefined) return;
+        this._objectMap.controller[alias] = new RobustiveObject(
+          type,
+          text,
+          alias
+        );
+        break;
+      case RobustiveObjectType.Entity:
+        if (this._objectMap.entity[text] !== undefined) return;
+        this._objectMap.entity[text] = new RobustiveObject(type, text);
+        break;
+      case RobustiveObjectType.Usecase:
+        if (this._objectMap.usecase[text] !== undefined) return;
+        this._objectMap.usecase[text] = new RobustiveObject(type, text);
+        break;
+    }
+  };
 
   setRootDoc = (txt: string): void => {
     console.log("========= setRootDoc =========", txt);
@@ -114,8 +164,6 @@ class RobustiveDB extends BaseDiagramDB {
 
   beginWithActor = (id: string): void => {
     console.log("=== beginWithActor:", id);
-    const a = new RobustiveObject(RobustiveObjectType.Actor, id);
-    this.idMap[id] = a;
   };
 
   addRelationActorWithBoundary = (
@@ -126,11 +174,6 @@ class RobustiveDB extends BaseDiagramDB {
 
     const r = new Relation(RobustiveRelationType.Related, actorId, boundaryId);
     this.relations.push(r);
-
-    if (this.idMap[boundaryId] !== undefined) return;
-
-    const b = new RobustiveObject(RobustiveObjectType.Boundary, boundaryId);
-    this.idMap[boundaryId] = b;
   };
 
   addRelationBounderyWithController(
@@ -151,11 +194,6 @@ class RobustiveDB extends BaseDiagramDB {
       condition
     );
     this.relations.push(r);
-
-    if (this.idMap[controllerId] !== undefined) return;
-
-    const c = new RobustiveObject(RobustiveObjectType.Controller, controllerId);
-    this.idMap[controllerId] = c;
   }
 
   addRelationBounderyWithUsecase(
@@ -172,11 +210,6 @@ class RobustiveDB extends BaseDiagramDB {
       condition
     );
     this.relations.push(r);
-
-    if (this.idMap[usecaseId] !== undefined) return;
-
-    const u = new RobustiveObject(RobustiveObjectType.Controller, usecaseId);
-    this.idMap[usecaseId] = u;
   }
 
   addRelationControllerWithController(
@@ -195,11 +228,6 @@ class RobustiveDB extends BaseDiagramDB {
       condition
     );
     this.relations.push(r);
-
-    if (this.idMap[toId] !== undefined) return;
-
-    const c = new RobustiveObject(RobustiveObjectType.Controller, toId);
-    this.idMap[toId] = c;
   }
 
   addRelationControllerWithUsecase(
@@ -222,11 +250,6 @@ class RobustiveDB extends BaseDiagramDB {
       condition
     );
     this.relations.push(r);
-
-    if (this.idMap[usecaseId] !== undefined) return;
-
-    const u = new RobustiveObject(RobustiveObjectType.Controller, usecaseId);
-    this.idMap[usecaseId] = u;
   }
 
   addRelationControllerWithBoundary(
@@ -245,11 +268,6 @@ class RobustiveDB extends BaseDiagramDB {
       boundaryId
     );
     this.relations.push(r);
-
-    if (this.idMap[boundaryId] !== undefined) return;
-
-    const b = new RobustiveObject(RobustiveObjectType.Boundary, boundaryId);
-    this.idMap[boundaryId] = b;
   }
 
   addRelationUsecaseWithBoundary(usecaseId: string, boundaryId: string): void {
@@ -265,11 +283,6 @@ class RobustiveDB extends BaseDiagramDB {
       boundaryId
     );
     this.relations.push(r);
-
-    if (this.idMap[boundaryId] !== undefined) return;
-
-    const b = new RobustiveObject(RobustiveObjectType.Boundary, boundaryId);
-    this.idMap[boundaryId] = b;
   }
 
   addRelationControllerWithEntity(
@@ -284,11 +297,6 @@ class RobustiveDB extends BaseDiagramDB {
       entityId
     );
     this.relations.push(r);
-
-    if (this.idMap[entityId] !== undefined) return;
-
-    const e = new RobustiveObject(RobustiveObjectType.Entity, entityId);
-    this.idMap[entityId] = e;
   }
 }
 

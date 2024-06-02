@@ -99,12 +99,15 @@ leftovers
 
 relation
     : RELATED {
+        console.log("★[relation] is Related.")
         $$ = { type: 'related' };
     }
     | SEQUENCIAL {
+        console.log("★[relation] is Sequential.")
         $$ = { type: 'sequential' };
     }
     | CONDITIONAL TEXT TEXT_END {
+        console.log("★[relation] is Conditional.")
         $$ = { type: 'conditional', condition: $2 };
     }
     ;
@@ -112,23 +115,33 @@ relation
 object
     : ACTOR TEXT TEXT_END {
         console.log(`★[object] is Actor labeled "${$2}".`);
+        yy.addObject('actor', $2);
         const object1 = { type: 'actor', text: $2 };
         $$ = object1;
     }
     | BOUNDARY TEXT TEXT_END {
         console.log(`★[object] is Boundary labeled "${$2}".`);
+        yy.addObject('boundary', $2);
         const object2 = { type: 'boundary', text: $2 };
         $$ = object2;
     }
     | CONTROLLER TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
         console.log(`★[object] is Controller labeled "${$2}" and has an alias "${$4}".`);
+        yy.addObject('controller', $2, $4);
         const object3 = { type: 'controller', text: $2, alias: $4 };
         $$ = object3;
     }
     | ENTITY TEXT TEXT_END {
         console.log(`★[object] is Entity labeled "${$2}".`);
+        yy.addObject('entity', $2);
         const object4 = { type: 'entity', text: $2 };
         $$ = object4;
+    }
+    | USECASE TEXT TEXT_END {
+        console.log(`★[object] is Usecase labeled "${$2}".`);
+        yy.addObject('usecase', $2);
+        const object5 = { type: 'usecase', text: $2 };
+        $$ = object5;
     }
     ;
 

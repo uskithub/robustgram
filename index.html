@@ -20,7 +20,11 @@
                   --> C[App checks if the user has a session](checkSession)
                   --- E[uuid]
                   --- E[name]
-                  -->[hoge is true] B[ラベル付き矢印から]
+                  -->[hoge is true] U[ログインする]
+                  -->[hoge is false] C[fuga](giyo)
+                  
+          $giyo -->[hoge is false] C[show home](showHome)
+                --> B[Home]
       </pre>
       <pre class="">
         robustive
