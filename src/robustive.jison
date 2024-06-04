@@ -24,6 +24,7 @@
 "]("                      { this.pushState('ALIAS'); return 'TEXT_END_ALIAS_START'; }
 "]"                       return 'TEXT_END';
 ")"                       return 'ALIAS_END';
+"$"                       { this.pushState('ALIAS'); return 'DOLLAR'; }
 [^\[\]]+                  return 'TEXT';
 <ALIAS>[a-zA-Z0-9_]+      { this.popState(); return 'ALIAS'; }
 
@@ -93,7 +94,12 @@ leftovers
             }
             const relation = [{ ...$1, to: $2 }];
             $$ = relation;
+            console.log('★★ $2:', $$);
         }
+    }
+    | alias leftovers {
+        const mycon = yy.getObject('controller', $1)
+        console.log('AAAAAAlias!!!', mycon, $2);
     }
     ;
 
@@ -145,4 +151,10 @@ object
     }
     ;
 
+alias
+    : DOLLAR ALIAS {
+        console.log(`★[alias] is "${$2}".`);
+        $$ = $2;
+    }
+    ;
 %%

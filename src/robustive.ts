@@ -158,6 +158,21 @@ class RobustiveDB extends BaseDiagramDB {
     }
   };
 
+  getObject = (type: RobustiveObjectType, text: string): RobustiveObject => {
+    switch (type) {
+      case RobustiveObjectType.Actor:
+        return this._objectMap.actor[text];
+      case RobustiveObjectType.Boundary:
+        return this._objectMap.boundary[text];
+      case RobustiveObjectType.Controller:
+        return this._objectMap.controller[text];
+      case RobustiveObjectType.Entity:
+        return this._objectMap.entity[text];
+      case RobustiveObjectType.Usecase:
+        return this._objectMap.usecase[text];
+    }
+  };
+
   setRootDoc = (txt: string): void => {
     console.log("========= setRootDoc =========", txt);
   };
