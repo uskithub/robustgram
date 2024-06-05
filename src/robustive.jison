@@ -40,11 +40,11 @@ start
     ;
 
 usecase
-    : /* empty */ { console.log('★empty'); $$ = [] }
+    : /* empty */ { console.log('★empty'); $$ = { basics: null, alternatives:[] } }
     | usecase line {
         if ($2 != 'nl') {
             console.log('★if [usecase]:', $1, ' [line]:', $2);
-            $1.push($2);
+            $1.basics = $2;
             $$ = $1;
         } else {
             console.log('★else [usecase]:', $1, ' [line]:', $2);
@@ -54,8 +54,8 @@ usecase
 
 line
 	: scenario { 
-        $$ = $1;
         console.log('★[line] is [scenario]:', $1);
+        $$ = $1;
     }
 	| NL { $$='nl'; }
 	;
@@ -69,8 +69,7 @@ scenario
         } else {
             $1.relations = [$2];
         }
-        // yy.beginWithActor($1.text);
-        // yy.addRelationActorWithBoundary($1.text, $2.to.text);
+        yy.addObject($1.type, $1);
         $$ = $1;
     }
     ;
@@ -121,7 +120,6 @@ relation
 object
     : ACTOR TEXT TEXT_END {
         console.log(`★[object] is Actor labeled "${$2}".`);
-        yy.addObject('actor', $2);
         const object1 = { type: 'actor', text: $2 };
         $$ = object1;
     }

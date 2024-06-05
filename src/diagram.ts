@@ -13,7 +13,7 @@ export type ParseErrorDetail = {
 export interface DiagramDB {
   // db
   clear?: () => void;
-  parseError?: (message: string, hash: ParseErrorDetail) => void;
+  parseError?: (message: string, hash?: ParseErrorDetail) => void;
 }
 export interface DiagramRenderer {
   draw: (

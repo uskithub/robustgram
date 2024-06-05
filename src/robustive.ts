@@ -9,17 +9,17 @@ import {
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
 
-type _Relation = {
+type RobustiveRelation = {
   type: RobustiveRelationType;
   condition?: string;
-  to: _Object;
+  to: RobustiveObject;
 };
 
-type _Object = {
+type RobustiveObject = {
   type: RobustiveObjectType;
   text: string;
   alias?: string;
-  relations: _Relation[];
+  relations: RobustiveRelation[];
 };
 
 class BaseDiagramDB implements DiagramDB {
@@ -57,16 +57,16 @@ export const RobustiveObjectType = {
 export type RobustiveObjectType =
   (typeof RobustiveObjectType)[keyof typeof RobustiveObjectType];
 
-const RobustiveRelationType = {
+export const RobustiveRelationType = {
   Related: "related",
   Sequential: "sequential",
   Conditional: "conditional",
 } as const;
 
-type RobustiveRelationType =
+export type RobustiveRelationType =
   (typeof RobustiveRelationType)[keyof typeof RobustiveRelationType];
 
-class RobustiveObject {
+class _Object {
   constructor(
     private _type: RobustiveObjectType,
     private _text: string,
@@ -102,6 +102,25 @@ class Relation {
   }
   get condition(): string | undefined {
     return this._condition;
+  }
+}
+export class RobustiveParseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RobustiveParseError";
+    Object.setPrototypeOf(this, RobustiveParseError.prototype);
+  }
+}
+
+export class RobustiveParseSyntaxError extends Error {
+  constructor(message: string, private _detail: ParseErrorDetail) {
+    super(message);
+    this.name = "RobustiveParseSyntaxError";
+    Object.setPrototypeOf(this, RobustiveParseSyntaxError.prototype);
+  }
+
+  get detail(): ParseErrorDetail {
+    return this._detail;
   }
 }
 
@@ -156,36 +175,33 @@ class RobustiveDB extends BaseDiagramDB {
     this.relations = [];
   };
 
-  addObject = (
-    type: RobustiveObjectType,
-    text: string,
-    alias?: string
-  ): void => {
+  addObject = ({ type, text, alias, relations }: RobustiveObject): void => {
     switch (type) {
       case RobustiveObjectType.Actor:
         if (this._objectMap.actor[text] !== undefined) return;
-        this._objectMap.actor[text] = new RobustiveObject(type, text);
+        this._objectMap.actor[text] = { type, text, relations };
         break;
       case RobustiveObjectType.Boundary:
         if (this._objectMap.boundary[text] !== undefined) return;
-        this._objectMap.boundary[text] = new RobustiveObject(type, text);
+        this._objectMap.boundary[text] = { type, text, relations };
         break;
       case RobustiveObjectType.Controller:
         if (alias === undefined) return;
         if (this._objectMap.controller[alias] !== undefined) return;
-        this._objectMap.controller[alias] = new RobustiveObject(
+        this._objectMap.controller[alias] = {
           type,
           text,
-          alias
-        );
+          alias,
+          relations,
+        };
         break;
       case RobustiveObjectType.Entity:
         if (this._objectMap.entity[text] !== undefined) return;
-        this._objectMap.entity[text] = new RobustiveObject(type, text);
+        this._objectMap.entity[text] = { type, text, relations };
         break;
       case RobustiveObjectType.Usecase:
         if (this._objectMap.usecase[text] !== undefined) return;
-        this._objectMap.usecase[text] = new RobustiveObject(type, text);
+        this._objectMap.usecase[text] = { type, text, relations };
         break;
     }
   };
@@ -351,21 +367,21 @@ class RobustiveDB extends BaseDiagramDB {
    * @param message
    * @param hash
    */
-  // parseError = (message: string, hash: ParseErrorDetail): void => {
-  //   console.error("oooSyntax error at line " + hash.line + ": " + message);
-  //   if (hash) {
-  //     // ここでエラーを catch して処理
-  //     console.error(
-  //       "yyySyntax error at line " +
-  //         hash.line +
-  //         ", column " +
-  //         hash.loc.first_column +
-  //         ": " +
-  //         message
-  //     );
-  //     // throw new Error("Syntax error in input stream");
-  //   }
-  // };
+  parseError = (message: string, hash?: ParseErrorDetail): void => {
+    if (hash === undefined) {
+      throw new RobustiveParseError(message);
+    }
+
+    throw new RobustiveParseSyntaxError(
+      "Syntax error at line " +
+        hash.line +
+        ", column " +
+        hash.loc.first_column +
+        ": " +
+        message,
+      hash
+    );
+  };
 }
 
 class RobustiveRenderer implements DiagramRenderer {
@@ -382,6 +398,10 @@ class RobustiveRenderer implements DiagramRenderer {
     throw new Error("Method not implemented.");
   }
 }
+export type RobustiveParseResult = {
+  basics: RobustiveObject;
+  relations: RobustiveObject[];
+};
 
 export class RobustiveDiagram implements DiagramDefinition {
   parser: ParserDefinition;
@@ -400,7 +420,8 @@ export class RobustiveDiagram implements DiagramDefinition {
     this.db.clear();
   }
 
-  parse(text: string): Promise<any> {
+  // TODO: parseの型を決める
+  parse(text: string): Promise<RobustiveParseResult> {
     return new Promise((resolve, reject) => {
       try {
         const parseResult = this.parser.parse(text);
