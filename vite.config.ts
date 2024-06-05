@@ -1,14 +1,13 @@
 import { defineConfig } from "vite";
 import jison from "jison";
 
-const transformJison = (src: string): string => {
-  const parser = new jison.Generator(src, {
+const transformJison = (grammer: string): string => {
+  const parser = new jison.Generator(grammer, {
     moduleType: "js",
     "token-stack": true,
   });
   const source = parser.generate({ moduleMain: "() => {}" });
   const exporter = `
-	parser.parser = parser;
 	export { parser };
 	export default parser;
 	`;

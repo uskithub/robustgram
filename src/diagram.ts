@@ -1,16 +1,19 @@
+export type ParseErrorDetail = {
+  text: string;
+  token: string;
+  line: number;
+  loc: {
+    first_line: number;
+    last_line: number;
+    first_column: number;
+    last_column: number;
+  };
+  expected: string[];
+};
 export interface DiagramDB {
   // db
   clear?: () => void;
-  setDiagramTitle?: (title: string) => void;
-  getDiagramTitle?: () => string;
-  setAccTitle?: (title: string) => void;
-  getAccTitle?: () => string;
-  setAccDescription?: (description: string) => void;
-  getAccDescription?: () => string;
-  setDisplayMode?: (title: string) => void;
-  bindFunctions?: (element: Element) => void;
-
-  getDirection?: () => string;
+  parseError?: (message: string, hash: ParseErrorDetail) => void;
 }
 export interface DiagramRenderer {
   draw: (
@@ -23,8 +26,7 @@ export interface DiagramRenderer {
 
 export interface ParserDefinition {
   yy: DiagramDB;
-  parse: (text: string) => void | Promise<void>;
-  parser?: { yy: DiagramDB };
+  parse: (text: string) => any; // parserで返すトップの $$ が返る
 }
 
 export interface DiagramDefinition {
@@ -105,8 +107,8 @@ export class Diagram {
 
     try {
       console.log("========= parser start =========", parser);
-      await parser.parse(text);
-      console.log("========= parse end =========", db);
+      const parseResult = parser.parse(text);
+      console.log("========= parse end =========", parseResult);
     } catch (e) {
       console.error(e);
       throw e;
