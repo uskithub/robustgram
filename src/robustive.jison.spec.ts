@@ -27,7 +27,7 @@ describe("Parsing with robustive.jison", () => {
     A[User] --- B[SignIn]`;
 
       const result = await d.parse(text);
-      console.log("result", result);
+      console.log("***", result);
       expect(result).not.toBeNull();
       expect(result.basics.type).toBe(RobustiveObjectType.Actor);
       expect(result.basics.text).toBe("User");
@@ -38,6 +38,7 @@ describe("Parsing with robustive.jison", () => {
         RobustiveObjectType.Boundary
       );
       expect(result.basics.relations[0].to.text).toBe("SignIn");
+      expect(result.alternatives.length).toBe(0);
     });
 
     describe("異常系", async () => {

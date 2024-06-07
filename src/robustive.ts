@@ -400,7 +400,7 @@ class RobustiveRenderer implements DiagramRenderer {
 }
 export type RobustiveParseResult = {
   basics: RobustiveObject;
-  relations: RobustiveObject[];
+  alternatives: RobustiveObject[];
 };
 
 export class RobustiveDiagram implements DiagramDefinition {
