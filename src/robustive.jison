@@ -77,19 +77,19 @@ scenario
 leftovers
     : relation object {
         console.log('1 related with', $2);
-        const relations1 = [{ ...$1, to: $2 }];
+        const relations1 = { ...$1, to: $2 };
         $$ = relations1;
     }
     | relation object leftovers {
         console.log('3 related with', $2, $3);
         if ($2.type === 'entity') {
-            const relation = [{ ...$1, to: $2 }].concat($3);
+            const relation = [{ ...$1, to: $2 }].push($3);
             $$ = relation;
         } else {
             if ($2.relations) {
-                $2.relations.concat($3);
+                $2.relations.push($3);
             } else {
-                $2.relations = $3;
+                $2.relations = [$3];
             }
             const relation = [{ ...$1, to: $2 }];
             $$ = relation;

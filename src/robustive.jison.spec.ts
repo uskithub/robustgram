@@ -27,7 +27,31 @@ describe("Parsing with robustive.jison", () => {
     A[User] --- B[SignIn]`;
 
       const result = await d.parse(text);
-      console.log("***", result);
+
+      expect(result).not.toBeNull();
+      expect(result.basics.type).toBe(RobustiveObjectType.Actor);
+      expect(result.basics.text).toBe("User");
+      expect(result.basics.relations[0].type).toBe(
+        RobustiveRelationType.Related
+      );
+      expect(result.basics.relations[0].to.type).toBe(
+        RobustiveObjectType.Boundary
+      );
+      expect(result.basics.relations[0].to.text).toBe("SignIn");
+      expect(result.alternatives.length).toBe(0);
+    });
+
+    it("基本コース、Boundary -->[Condition] Controller が解析できること", async () => {
+      const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] C[App checks if the user has a session](checkSession)`;
+
+      const result = await d.parse(text);
+      console.log("***", result.basics.relations);
+      console.log("***", result.basics.relations[0][0]);
+      console.log("***", result.basics.relations[0][0].to);
+      console.log("***", result.basics.relations[0][0].to.relations[0].to);
+
       expect(result).not.toBeNull();
       expect(result.basics.type).toBe(RobustiveObjectType.Actor);
       expect(result.basics.text).toBe("User");
