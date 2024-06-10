@@ -85,6 +85,22 @@ scenario
 leftovers
     : relation object {
         console.log('1 related with', $2);
+        if ($1.type === 'related') {
+            if ($2.type !== 'boundary' && $2.type !== 'entity') {
+                $1.violating = '"Related" can only be connected to Boundary or Entity.'
+                yy.hasError = true;
+            }
+        } else if ($1.type === 'sequential') {
+            if ($2.type !== 'boundary' && $2.type !== 'controller' && $2.type !== 'usecase') {
+                $1.violating = '"Sequential" can only be connected to Boundary, Controller or Usecase.'
+                yy.hasError = true;
+            }
+        } else if ($1.type === 'conditional') {
+            if ($2.type !== 'boundary' && $2.type !== 'controller' && $2.type !== 'usecase') {
+                $1.violating = '"Conditional" can only be connected to Boundary, Controller or Usecase.'
+                yy.hasError = true;
+            }
+        }
         const relations1 = { ...$1, to: $2 };
         $$ = relations1;
     }
@@ -149,10 +165,10 @@ object
         const object4 = { type: 'entity', text: $2 };
         $$ = object4;
     }
-    | USECASE TEXT TEXT_END {
-        console.log(`★[object] is Usecase labeled "${$2}".`);
-        yy.addObject('usecase', $2);
-        const object5 = { type: 'usecase', text: $2 };
+    | USECASE TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
+        console.log(`★[object] is Usecase labeled "${$2}" and has an alias "${$4}".`);
+        yy.addObject('usecase', $2, $4);
+        const object5 = { type: 'usecase', text: $2, alias: $4 };
         $$ = object5;
     }
     ;
