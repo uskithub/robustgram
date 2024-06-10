@@ -23,7 +23,7 @@
                   -->[hoge is true] U[ログインする]
                   -->[hoge is false] C[fuga](giyo)
                   
-          $giyo -->[hoge is false] C[show home](showHome)
+          $checkSession -->[hoge is false] C[show home](showHome)
                 --> B[Home]
       </pre>
       <pre class="">
@@ -37,7 +37,7 @@
                   --> C[App presents Home View](presentHomeView)
                   --> B[Home]
   
-          $checkSession -->[if not](false) U[User signs up](SignUp);
+          $checkSession -->[addObjectしたContollerにaliasがない](false) U[User signs up](SignUp);
       </pre>
     </div>
     <script type="module" src="/src/main.ts"></script>

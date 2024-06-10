@@ -13,12 +13,14 @@ type RobustiveRelation = {
   type: RobustiveRelationType;
   condition?: string;
   to: RobustiveObject;
+  violating?: string;
 };
 
 type RobustiveObject = {
   type: RobustiveObjectType;
   text: string;
   alias?: string;
+  violating?: string;
   relations: RobustiveRelation[];
 };
 
@@ -139,6 +141,7 @@ class RobustiveDB extends BaseDiagramDB {
     usecase: {},
   };
   private relations: Relation[] = [];
+  private _hasError: boolean = false;
 
   get objectMap() {
     return this._objectMap;
@@ -164,6 +167,10 @@ class RobustiveDB extends BaseDiagramDB {
     return Object.values(this._objectMap.usecase);
   }
 
+  set hasError(value: boolean) {
+    this._hasError = value;
+  }
+
   clear = (): void => {
     this._objectMap = {
       actor: {},
@@ -173,6 +180,7 @@ class RobustiveDB extends BaseDiagramDB {
       usecase: {},
     };
     this.relations = [];
+    this._hasError = false;
   };
 
   addObject = ({ type, text, alias, relations }: RobustiveObject): void => {
@@ -401,6 +409,7 @@ class RobustiveRenderer implements DiagramRenderer {
 export type RobustiveParseResult = {
   basics: RobustiveObject;
   alternatives: RobustiveObject[];
+  hasError: boolean;
 };
 
 export class RobustiveDiagram implements DiagramDefinition {

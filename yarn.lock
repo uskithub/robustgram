@@ -646,6 +646,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^20.14.2":
+  version: 20.14.2
+  resolution: "@types/node@npm:20.14.2"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: 10c0/2d86e5f2227aaa42212e82ea0affe72799111b888ff900916376450b02b09b963ca888b20d9c332d8d2b833ed4781987867a38eaa2e4863fa8439071468b0a6f
+  languageName: node
+  linkType: hard
+
 "@types/stylis@npm:^4":
   version: 4.2.6
   resolution: "@types/stylis@npm:4.2.6"
@@ -2278,6 +2287,7 @@ __metadata:
     "@types/d3": "npm:^7"
     "@types/dompurify": "npm:^3"
     "@types/katex": "npm:^0"
+    "@types/node": "npm:^20.14.2"
     "@types/stylis": "npm:^4"
     d3: "npm:^7.9.0"
     dagre-d3-es: "npm:^7.0.10"
@@ -2641,6 +2651,13 @@ __metadata:
   version: 1.6.0
   resolution: "underscore@npm:1.6.0"
   checksum: 10c0/23db03890dc042984b5a6082f2784969aa1af0110b11486347b84e3e1c5ebc3a83531cfc031097900ccfc88cf2ded43970220d94e388e5b10e56519813d7d029
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~5.26.4":
+  version: 5.26.5
+  resolution: "undici-types@npm:5.26.5"
+  checksum: 10c0/bb673d7876c2d411b6eb6c560e0c571eef4a01c1c19925175d16e3a30c4c428181fb8d7ae802a261f283e4166a0ac435e2f505743aa9e45d893f9a3df017b501
   languageName: node
   linkType: hard
 

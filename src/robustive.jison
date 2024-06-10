@@ -1,4 +1,4 @@
-%lex
+%lex /* lexical grammar */
 
 
 %options case-insensitive
@@ -30,21 +30,25 @@
 
 /lex
 
-%start start
+%start start 
 
-%%
+%% /* language grammar */
 
 start
-    : NL start
+    : NL start 
     | RD usecase { yy.setRootDoc($2); return $2; }
     ;
 
 usecase
-    : /* empty */ { console.log('★empty'); $$ = { basics: null, alternatives:[] } }
+    : /* empty */ { 
+        console.log('★empty');
+        $$ = { basics: null, alternatives:[], hasError: false } 
+    }
     | usecase line {
         if ($2 != 'nl') {
             console.log('★if [usecase]:', $1, ' [line]:', $2);
             $1.basics = $2;
+            $1.hasError = yy.hasError;
             $$ = $1;
         } else {
             console.log('★else [usecase]:', $1, ' [line]:', $2);
@@ -69,6 +73,10 @@ scenario
         } else {
             $1.relations = [$2];
         }
+        if ($1.type !== 'actor') {
+            $1.violating = 'Only Actor comes first in the basic course.'
+            yy.hasError = true;
+        }
         yy.addObject($1.type, $1);
         $$ = $1;
     }
@@ -91,7 +99,7 @@ leftovers
             } else {
                 $2.relations = [$3];
             }
-            const relation = [{ ...$1, to: $2 }];
+            const relation = { ...$1, to: $2 };
             $$ = relation;
             console.log('★★ $2:', $$);
         }
