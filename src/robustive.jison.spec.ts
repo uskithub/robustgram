@@ -14,6 +14,49 @@ describe("Parsing with robustive.jison", () => {
     d.clear();
   });
 
+  /**
+   * spec | pattern
+   * -----|----------------
+   * x    | A related A
+   * o    | A related B
+   * x    | A related C
+   * x    | A related E
+   * x    | A related U
+   * x    | A sequential X
+   * x    | A conditional X
+   * -----|----------------
+   * x    | B related X
+   * x    | B sequential X
+   * x    | B conditional A
+   * x    | B conditional B
+   * o    | B conditional C
+   * x    | B conditional E
+   * o    | B conditional U
+   * -----|----------------
+   * x    | C related A
+   * x    | C related B
+   * x    | C related C
+   * o    | C related E
+   * x    | C related U
+   * x    | C sequential A
+   * o    | C sequential B
+   * o    | C sequential C
+   * x    | C sequential E
+   * o    | C sequential U
+   * x    | C conditional A
+   * x    | C conditional B
+   * o    | C conditional C
+   * x    | C conditional E
+   * o    | C conditional U
+   * -----|----------------
+   * x    | U related X
+   * x    | U sequential X
+   * x    | U conditional A
+   * x    | U conditional B
+   * o    | U conditional C
+   * x    | U conditional E
+   * o    | U conditional U
+   */
   describe("構文解析規則", async () => {
     it("robustiveで始まるテキストを解析できること", async () => {
       const text = `robustive
@@ -115,71 +158,6 @@ describe("Parsing with robustive.jison", () => {
     });
 
     describe("基本コース", async () => {
-      /**
-       * spec | pattern
-       * -----|----------------
-       * x    | A related A
-       * o    | A related B
-       * x    | A related C
-       * x    | A related E
-       * x    | A related U
-       * x    | A sequential A
-       * x    | A sequential B
-       * x    | A sequential C
-       * x    | A sequential E
-       * x    | A sequential U
-       * x    | A conditional A
-       * x    | A conditional B
-       * x    | A conditional C
-       * x    | A conditional E
-       * x    | A conditional U
-       * x    | B related A
-       * o    | B related B
-       * x    | B related C
-       * x    | B related E
-       * x    | B related U
-       * x    | B sequential A
-       * x    | B sequential B
-       * x    | B sequential C
-       * x    | B sequential E
-       * x    | B sequential U
-       * x    | B conditional A
-       * x    | B conditional B
-       * o    | B conditional C
-       * x    | B conditional E
-       * o    | B conditional U
-       * x    | C related A
-       * x    | C related B
-       * x    | C related C
-       * o    | C related E
-       * x    | C related U
-       * x    | C sequential A
-       * o    | C sequential B
-       * o    | C sequential C
-       * x    | C sequential E
-       * o    | C sequential U
-       * x    | C conditional A
-       * x    | C conditional B
-       * o    | C conditional C
-       * x    | C conditional E
-       * o    | C conditional U
-       *
-       * x    | U related A
-       * x    | U related B
-       * x    | U related C
-       * x    | U related E
-       * x    | U related U
-       * x    | U sequential A
-       * x    | U sequential B
-       * x    | U sequential C
-       * x    | U sequential E
-       * x    | U sequential U
-       * x    | U conditional A
-       * x    | U conditional B
-       * o    | U conditional C
-       * x    | U conditional E
-       * o    | U conditional U
-       */
       it("Boundary -->[Condition] Controller が解析できること", async () => {
         const text = `robustive
     A[User] --- B[SignIn]

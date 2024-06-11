@@ -402,6 +402,7 @@ const render = async (
   try {
     await diag.renderer.draw(text, id, version);
   } catch (e) {
+    console.error("Error drawing diagram", e);
     errorDraw(text, id, version);
     throw e;
   }

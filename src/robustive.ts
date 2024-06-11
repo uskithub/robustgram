@@ -402,7 +402,11 @@ class RobustiveRenderer implements DiagramRenderer {
     version: string,
     db: DiagramDB = this.db
   ): Promise<void> {
-    console.log("========= draw =========", text, id, version, db);
+    console.log("========= start draw =========");
+    console.log("text:", text);
+    console.log("id:", id);
+    console.log("version:", version);
+    console.log("db:", db);
     throw new Error("Method not implemented.");
   }
 }
