@@ -99,7 +99,7 @@ describe("Parsing with robustive.jison", () => {
       });
 
       describe("異常系", async () => {
-        it("Boundaryは構文違反となること", async () => {
+        it("Boundary は構文違反となること", async () => {
           const text = `robustive
           B[SignIn] -->[touch button] C[App checks if the user has a session](checkSession)`;
 
@@ -113,7 +113,7 @@ describe("Parsing with robustive.jison", () => {
           expect(result.hasError).toBeTruthy();
         });
 
-        it("Controllerは構文違反となること", async () => {
+        it("Controller は構文違反となること", async () => {
           const text = `robustive
           C[App checks if the user has a session](checkSession) --- B[SignIn]`;
 
@@ -141,7 +141,7 @@ describe("Parsing with robustive.jison", () => {
           expect(result.hasError).toBeTruthy();
         });
 
-        it("Usecaseは構文違反となること", async () => {
+        it("Usecase は構文違反となること", async () => {
           const text = `robustive
           U[User signs up](signUp) -->[touch button] C[App checks if the user has a session](checkSession)`;
 
@@ -154,6 +154,21 @@ describe("Parsing with robustive.jison", () => {
           );
           expect(result.hasError).toBeTruthy();
         });
+
+        it.todo("Actor --- Actor は構文違反となること");
+        it.todo("Actor --- Controller は構文違反となること");
+        it.todo("Actor --- Entity は構文違反となること");
+        it.todo("Actor --- Usecase は構文違反となること");
+        it.todo("Actor --> Actor は構文違反となること");
+        it.todo("Actor --> Boundary は構文違反となること");
+        it.todo("Actor --> Controller は構文違反となること");
+        it.todo("Actor --> Entity は構文違反となること");
+        it.todo("Actor --> Usecase は構文違反となること");
+        it.todo("Actor -->[Condition] Actor は構文違反となること");
+        it.todo("Actor -->[Condition] Boundary は構文違反となること");
+        it.todo("Actor -->[Condition] Controller は構文違反となること");
+        it.todo("Actor -->[Condition] Entity は構文違反となること");
+        it.todo("Actor -->[Condition] Usecase は構文違反となること");
       });
     });
 
@@ -178,8 +193,75 @@ describe("Parsing with robustive.jison", () => {
         expect(result.alternatives.length).toBe(0);
         expect(result.hasError).toBeFalsy();
       });
+
+      it("Boundary -->[Condition] Usecase が解析できること", async () => {
+        const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] U[User signs up](signUp)`;
+
+        const result = await d.parse(text);
+
+        expect(result).not.toBeNull();
+
+        const relation = result.basics.relations[0].to.relations[0];
+        expect(relation.type).toBe(RobustiveRelationType.Conditional);
+        expect(relation.condition).toBe("touch button");
+        expect(relation.violating).toBeUndefined();
+        expect(relation.to.type).toBe(RobustiveObjectType.Usecase);
+        expect(relation.to.text).toBe("User signs up");
+        expect(relation.to.alias).toBe("signUp");
+        expect(relation.to.violating).toBeUndefined();
+        expect(result.alternatives.length).toBe(0);
+        expect(result.hasError).toBeFalsy();
+      });
+
+      it("Controller --- Entity が解析できること", async () => {
+        const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] C[App checks if the user has a session](checkSession)
+            --- E[UserInfo]`;
+
+        const result = await d.parse(text);
+
+        expect(result).not.toBeNull();
+
+        const relation =
+          result.basics.relations[0].to.relations[0].to.relations[0];
+        expect(relation.type).toBe(RobustiveRelationType.Related);
+        expect(relation.violating).toBeUndefined();
+        expect(relation.to.type).toBe(RobustiveObjectType.Entity);
+        expect(relation.to.text).toBe("UserInfo");
+        expect(relation.to.violating).toBeUndefined();
+        expect(result.alternatives.length).toBe(0);
+        expect(result.hasError).toBeFalsy();
+      });
+
+      it("Controller --- Entity が解析できること", async () => {
+        const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] C[App checks if the user has a session](checkSession)
+            --- E[UserInfo], E[version]`;
+
+        const result = await d.parse(text);
+
+        expect(result).not.toBeNull();
+
+        const relation =
+          result.basics.relations[0].to.relations[0].to.relations[0];
+        expect(relation.type).toBe(RobustiveRelationType.Related);
+        expect(relation.violating).toBeUndefined();
+        expect(relation.to.type).toBe(RobustiveObjectType.Entity);
+        expect(relation.to.text).toBe("UserInfo");
+        expect(relation.to.violating).toBeUndefined();
+        expect(result.alternatives.length).toBe(0);
+        expect(result.hasError).toBeFalsy();
+      });
+
       describe("異常系", async () => {
-        it("Boundary ---> Usecase は構文違反となること", async () => {});
+        it.todo("Boundary --- Actor は構文違反となること");
+
+        it.todo("Boundary --- Boundary は構文違反となること");
+
         it("Boundary --- Controller は構文違反となること", async () => {
           const text = `robustive
       A[User] --- B[SignIn]
@@ -198,6 +280,8 @@ describe("Parsing with robustive.jison", () => {
           expect(result.hasError).toBeTruthy();
         });
 
+        it.todo("Boundary --- Entity は構文違反となること");
+
         it("Boundary --- Usecase は構文違反となること", async () => {
           const text = `robustive
       A[User] --- B[SignIn]
@@ -214,7 +298,16 @@ describe("Parsing with robustive.jison", () => {
           expect(result.hasError).toBeTruthy();
         });
 
-        it("Boundary ---> Usecase は構文違反となること", async () => {});
+        it.todo("Boundary --> Actor は構文違反となること");
+        it.todo("Boundary --> Boundary は構文違反となること");
+        it.todo("Boundary --> Controller は構文違反となること");
+        it.todo("Boundary --> Entity は構文違反となること");
+        it.todo("Boundary --> Usecase は構文違反となること");
+
+        it.todo("Boundary --->[Condition] Actor は構文違反となること");
+        it.todo("Boundary --->[Condition] Boundary は構文違反となること");
+        it.todo("Boundary --->[Condition] Boundary は構文違反となること");
+        it.todo("Boundary --->[Condition] Entity は構文違反となること");
       });
     });
   });
