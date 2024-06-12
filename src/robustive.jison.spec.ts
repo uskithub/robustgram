@@ -236,23 +236,60 @@ describe("Parsing with robustive.jison", () => {
         expect(result.hasError).toBeFalsy();
       });
 
-      it("Controller --- Entity が解析できること", async () => {
+      it("Controller --- Entity, Entity が解析できること", async () => {
         const text = `robustive
     A[User] --- B[SignIn]
         -->[touch button] C[App checks if the user has a session](checkSession)
-            --- E[UserInfo], E[version]`;
+            --- E[UserInfo], E[Version]`;
 
         const result = await d.parse(text);
 
         expect(result).not.toBeNull();
 
-        const relation =
-          result.basics.relations[0].to.relations[0].to.relations[0];
-        expect(relation.type).toBe(RobustiveRelationType.Related);
-        expect(relation.violating).toBeUndefined();
-        expect(relation.to.type).toBe(RobustiveObjectType.Entity);
-        expect(relation.to.text).toBe("UserInfo");
-        expect(relation.to.violating).toBeUndefined();
+        const relations =
+          result.basics.relations[0].to.relations[0].to.relations;
+        expect(relations[0].type).toBe(RobustiveRelationType.Related);
+        expect(relations[0].violating).toBeUndefined();
+        expect(relations[0].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[0].to.text).toBe("UserInfo");
+        expect(relations[0].to.violating).toBeUndefined();
+
+        expect(relations[1].type).toBe(RobustiveRelationType.Related);
+        expect(relations[1].violating).toBeUndefined();
+        expect(relations[1].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[1].to.text).toBe("Version");
+        expect(relations[1].to.violating).toBeUndefined();
+
+        expect(result.alternatives.length).toBe(0);
+        expect(result.hasError).toBeFalsy();
+      });
+
+      it("Controller --- Entity, Entity, Entity が解析できること", async () => {
+        const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] C[App checks if the user has a session](checkSession)
+            --- E[UserInfo], E[Version], E[Timestamp]`;
+
+        const result = await d.parse(text);
+
+        console.debug("***", util.inspect(result, { depth: Infinity }));
+
+        expect(result).not.toBeNull();
+
+        const relations =
+          result.basics.relations[0].to.relations[0].to.relations;
+        expect(relations[0].type).toBe(RobustiveRelationType.Related);
+        expect(relations[0].violating).toBeUndefined();
+        expect(relations[0].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[0].to.text).toBe("UserInfo");
+        expect(relations[0].to.violating).toBeUndefined();
+
+        expect(relations[1].type).toBe(RobustiveRelationType.Related);
+        expect(relations[1].violating).toBeUndefined();
+        expect(relations[1].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[1].to.text).toBe("Version");
+        expect(relations[1].to.violating).toBeUndefined();
+
         expect(result.alternatives.length).toBe(0);
         expect(result.hasError).toBeFalsy();
       });
@@ -268,8 +305,6 @@ describe("Parsing with robustive.jison", () => {
           --- C[App checks if the user has a session](checkSession)`;
 
           const result = await d.parse(text);
-
-          console.debug("***", util.inspect(result, { depth: Infinity }));
 
           expect(result).not.toBeNull();
           const relation = result.basics.relations[0].to.relations[0];

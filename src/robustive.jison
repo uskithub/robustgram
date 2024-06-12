@@ -15,6 +15,7 @@
 "---"                     return 'RELATED';
 "-->["                    return 'CONDITIONAL';
 "-->"                     return 'SEQUENCIAL';
+","                       return 'AND';
 
 "A["                      return 'ACTOR';
 "B["                      return 'BOUNDARY';
@@ -65,13 +66,13 @@ line
 	;
 
 scenario
-    : object leftovers {
+    : objects leftovers {
         /* 始まりが決まる*/
         console.log('★beginWith: object=',$1, 'leftovers=', $2);
         if ($1.relations) {
-            $1.relations.push($2);
+            $1.relations = $1.relations.concat($2);
         } else {
-            $1.relations = [$2];
+            $1.relations = $2;
         }
         if ($1.type !== 'actor') {
             $1.violating = 'Only Actor comes first in the basic course.'
@@ -83,10 +84,10 @@ scenario
     ;
 
 leftovers
-    : relation object {
+    : relation objects {
         console.log('1 related with', $2);
         if ($1.type === 'related') {
-            if ($2.type !== 'boundary' && $2.type !== 'entity') {
+            if ($2.type !== 'boundary' && ((Array.isArray($2) && $2[0].type !== 'entity') || (!Array.isArray($2) && $2.type !== 'entity'))) {
                 $1.violating = '"Related" can only be connected to Boundary or Entity.'
                 yy.hasError = true;
             }
@@ -101,22 +102,46 @@ leftovers
                 yy.hasError = true;
             }
         }
-        const relations1 = { ...$1, to: $2 };
-        $$ = relations1;
+
+        if (Array.isArray($2)) {
+            const relations = $2.map(o => { return { ...$1, to: o } });
+            $$ = relations;
+        } else {
+            const relation = { ...$1, to: $2 };
+            $$ = [relation];
+        }
     }
-    | relation object leftovers {
+    | relation objects leftovers {
         console.log('3 related with', $2, $3);
-        if ($2.type === 'entity') {
-            const relation = [{ ...$1, to: $2 }].push($3);
-            $$ = relation;
+        if (Array.isArray($2)) { /* [{ type: 'entity', ... }] */
+            const relations = $2.map(o => { return { ...$1, to: o } }).concat($3);
+            /* [
+             *   { type: 'related', to: { type: 'entity', ... },
+             *   { type: 'sequential', to: { type: 'controller', ... } <--- $3
+             * ]
+             */
+            $$ = relations; 
         } else {
             if ($2.relations) {
-                $2.relations.push($3);
+                /*
+                 *  { type: 'controller' , relations: [
+                 *      { type: 'related' , to: { type: 'entity', ... },
+                 *      { type: 'sequential', to: { type: 'controller', ... } <--- $3
+                 *    ]
+                 *  }
+                 */
+                $2.relations = $2.relations.concat($3);
             } else {
-                $2.relations = [$3];
+                /*
+                 *  { type: 'controller' , relations: [
+                 *      { type: 'sequential', to: { type: 'controller', ... } <--- $3
+                 *    ]
+                 *  }
+                 */
+                $2.relations = $3;
             }
             const relation = { ...$1, to: $2 };
-            $$ = relation;
+            $$ = [relation];
             console.log('★★ $2:', $$);
         }
     }
@@ -141,7 +166,7 @@ relation
     }
     ;
 
-object
+objects
     : ACTOR TEXT TEXT_END {
         console.log(`★[object] is Actor labeled "${$2}".`);
         const object1 = { type: 'actor', text: $2 };
@@ -170,6 +195,24 @@ object
         yy.addObject('usecase', $2, $4);
         const object5 = { type: 'usecase', text: $2, alias: $4 };
         $$ = object5;
+    }
+    | ENTITY TEXT TEXT_END AND objects {
+        if (Array.isArray($5) && $5[0].type !== 'entity') {
+            $5[0].violating = '"And" can only be used if all objects are Entity.'
+            yy.hasError = true;
+        } else if (!Array.isArray($5) && $5.type !== 'entity') {
+            $5.violating = '"And" can only be used if all objects are Entity.'
+            yy.hasError = true;
+        }
+        console.log(`★[object] is Entity labeled "${$2}" and "${$5}".`);
+        yy.addObject('entity', $2);
+        const object6 = { type: 'entity', text: $2 };
+        if (Array.isArray($5)){
+            $5.unshift(object6)
+            $$ = $5;
+        } else {
+            $$ = [object6, $5];
+        }  
     }
     ;
 
