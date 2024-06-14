@@ -184,6 +184,7 @@ class RobustiveDB extends BaseDiagramDB {
   };
 
   addObject = ({ type, text, alias, relations }: RobustiveObject): void => {
+    console.log("=== addObject:", type, text, alias, relations);
     switch (type) {
       case RobustiveObjectType.Actor:
         if (this._objectMap.actor[text] !== undefined) return;

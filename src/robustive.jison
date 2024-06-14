@@ -78,7 +78,7 @@ scenario
             $1.violating = 'Only Actor comes first in the basic course.'
             yy.hasError = true;
         }
-        yy.addObject($1.type, $1);
+        yy.addObject($1);
         $$ = $1;
     }
     ;
@@ -113,7 +113,7 @@ leftovers
     }
     | relation objects leftovers {
         console.log('3 related with', $2, $3);
-        if (Array.isArray($2)) { /* [{ type: 'entity', ... }] */
+        if (Array.isArray($2)) { /* when only [{ type: 'entity', ... }] */
             const relations = $2.map(o => { return { ...$1, to: o } }).concat($3);
             /* [
              *   { type: 'related', to: { type: 'entity', ... },
@@ -142,12 +142,14 @@ leftovers
             }
             const relation = { ...$1, to: $2 };
             $$ = [relation];
+            yy.addObject($2);
             console.log('★★ $2:', $$);
         }
     }
     | alias leftovers {
         const mycon = yy.getObject('controller', $1)
-        console.log('AAAAAAlias!!!', mycon, $2);
+        console.log(`★Alias: ${$1}`, mycon, $2);
+        mycon.relations.push($2);
     }
     ;
 
@@ -174,26 +176,26 @@ objects
     }
     | BOUNDARY TEXT TEXT_END {
         console.log(`★[object] is Boundary labeled "${$2}".`);
-        yy.addObject('boundary', $2);
         const object2 = { type: 'boundary', text: $2 };
+        // yy.addObject(object2);
         $$ = object2;
     }
     | CONTROLLER TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
         console.log(`★[object] is Controller labeled "${$2}" and has an alias "${$4}".`);
-        yy.addObject('controller', $2, $4);
         const object3 = { type: 'controller', text: $2, alias: $4 };
+        // yy.addObject(object3);
         $$ = object3;
     }
     | ENTITY TEXT TEXT_END {
         console.log(`★[object] is Entity labeled "${$2}".`);
-        yy.addObject('entity', $2);
         const object4 = { type: 'entity', text: $2 };
+        yy.addObject(object4);
         $$ = object4;
     }
     | USECASE TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
         console.log(`★[object] is Usecase labeled "${$2}" and has an alias "${$4}".`);
-        yy.addObject('usecase', $2, $4);
         const object5 = { type: 'usecase', text: $2, alias: $4 };
+        // yy.addObject(object5);
         $$ = object5;
     }
     | ENTITY TEXT TEXT_END AND objects {
@@ -205,8 +207,8 @@ objects
             yy.hasError = true;
         }
         console.log(`★[object] is Entity labeled "${$2}" and "${$5}".`);
-        yy.addObject('entity', $2);
         const object6 = { type: 'entity', text: $2 };
+        // yy.addObject(object6);
         if (Array.isArray($5)){
             $5.unshift(object6)
             $$ = $5;

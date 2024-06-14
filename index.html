@@ -18,10 +18,8 @@
         robustive
           A[User] --- B[iPhone's home] 
                   --> C[App checks if the user has a session](checkSession)
-                  --- E[uuid]
-                  --- E[name]
-                  -->[hoge is true] U[ログインする]
-                  -->[hoge is false] C[fuga](giyo)
+                      --- E[uuid], E[name]
+                  -->[hoge is true] U[login](login)
                   
           $checkSession -->[hoge is false] C[show home](showHome)
                 --> B[Home]
