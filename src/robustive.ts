@@ -127,249 +127,22 @@ export class RobustiveParseSyntaxError extends Error {
 }
 
 class RobustiveDB extends BaseDiagramDB {
-  private _objectMap: {
-    actor: Record<string, RobustiveObject>;
-    boundary: Record<string, RobustiveObject>;
-    controller: Record<string, RobustiveObject>;
-    entity: Record<string, RobustiveObject>;
-    usecase: Record<string, RobustiveObject>;
-  } = {
-    actor: {},
-    boundary: {},
-    controller: {},
-    entity: {},
-    usecase: {},
-  };
   private relations: Relation[] = [];
   private _hasError: boolean = false;
-
-  get objectMap() {
-    return this._objectMap;
-  }
-
-  get actors(): RobustiveObject[] {
-    return Object.values(this._objectMap.actor);
-  }
-
-  get boundaries(): RobustiveObject[] {
-    return Object.values(this._objectMap.boundary);
-  }
-
-  get controllers(): RobustiveObject[] {
-    return Object.values(this._objectMap.controller);
-  }
-
-  get entities(): RobustiveObject[] {
-    return Object.values(this._objectMap.entity);
-  }
-
-  get usecases(): RobustiveObject[] {
-    return Object.values(this._objectMap.usecase);
-  }
 
   set hasError(value: boolean) {
     this._hasError = value;
   }
 
   clear = (): void => {
-    this._objectMap = {
-      actor: {},
-      boundary: {},
-      controller: {},
-      entity: {},
-      usecase: {},
-    };
-    this.relations = [];
     this._hasError = false;
   };
 
-  addObject = ({ type, text, alias, relations }: RobustiveObject): void => {
-    console.log("=== addObject:", type, text, alias, relations);
-    switch (type) {
-      case RobustiveObjectType.Actor:
-        if (this._objectMap.actor[text] !== undefined) return;
-        this._objectMap.actor[text] = { type, text, relations };
-        break;
-      case RobustiveObjectType.Boundary:
-        if (this._objectMap.boundary[text] !== undefined) return;
-        this._objectMap.boundary[text] = { type, text, relations };
-        break;
-      case RobustiveObjectType.Controller:
-        if (alias === undefined) return;
-        if (this._objectMap.controller[alias] !== undefined) return;
-        this._objectMap.controller[alias] = {
-          type,
-          text,
-          alias,
-          relations,
-        };
-        break;
-      case RobustiveObjectType.Entity:
-        if (this._objectMap.entity[text] !== undefined) return;
-        this._objectMap.entity[text] = { type, text, relations };
-        break;
-      case RobustiveObjectType.Usecase:
-        if (this._objectMap.usecase[text] !== undefined) return;
-        this._objectMap.usecase[text] = { type, text, relations };
-        break;
-    }
+  console = {
+    log: (message?: any, ...optionalParams: any[]): void => {
+      console.log(message, ...optionalParams);
+    },
   };
-
-  getObject = (type: RobustiveObjectType, text: string): RobustiveObject => {
-    switch (type) {
-      case RobustiveObjectType.Actor:
-        return this._objectMap.actor[text];
-      case RobustiveObjectType.Boundary:
-        return this._objectMap.boundary[text];
-      case RobustiveObjectType.Controller:
-        return this._objectMap.controller[text];
-      case RobustiveObjectType.Entity:
-        return this._objectMap.entity[text];
-      case RobustiveObjectType.Usecase:
-        return this._objectMap.usecase[text];
-    }
-  };
-
-  setRootDoc = (txt: string): void => {
-    console.log("========= setRootDoc =========", txt);
-  };
-
-  beginWithActor = (id: string): void => {
-    console.log("=== beginWithActor:", id);
-  };
-
-  addRelationActorWithBoundary = (
-    actorId: string,
-    boundaryId: string
-  ): void => {
-    console.log("=== addRelationActorWithBoundary:", actorId, boundaryId);
-
-    const r = new Relation(RobustiveRelationType.Related, actorId, boundaryId);
-    this.relations.push(r);
-  };
-
-  addRelationBounderyWithController(
-    boundaryId: string,
-    controllerId: string,
-    condition: string
-  ): void {
-    console.log(
-      "=== addRelationBounderyWithController:",
-      boundaryId,
-      controllerId
-    );
-
-    const r = new Relation(
-      RobustiveRelationType.Conditional,
-      boundaryId,
-      controllerId,
-      condition
-    );
-    this.relations.push(r);
-  }
-
-  addRelationBounderyWithUsecase(
-    boundaryId: string,
-    usecaseId: string,
-    condition: string
-  ): void {
-    console.log("=== addRelationBounderyWithUsecase:", boundaryId, usecaseId);
-
-    const r = new Relation(
-      RobustiveRelationType.Conditional,
-      boundaryId,
-      usecaseId,
-      condition
-    );
-    this.relations.push(r);
-  }
-
-  addRelationControllerWithController(
-    fromId: string,
-    toId: string,
-    condition: string | undefined
-  ): void {
-    console.log("=== addRelationControllerWithController:", fromId, toId);
-
-    const r = new Relation(
-      condition
-        ? RobustiveRelationType.Conditional
-        : RobustiveRelationType.Sequential,
-      fromId,
-      toId,
-      condition
-    );
-    this.relations.push(r);
-  }
-
-  addRelationControllerWithUsecase(
-    controllerId: string,
-    usecaseId: string,
-    condition: string | undefined
-  ): void {
-    console.log(
-      "=== addRelationControllerWithUsecase:",
-      controllerId,
-      usecaseId
-    );
-
-    const r = new Relation(
-      condition
-        ? RobustiveRelationType.Conditional
-        : RobustiveRelationType.Sequential,
-      controllerId,
-      usecaseId,
-      condition
-    );
-    this.relations.push(r);
-  }
-
-  addRelationControllerWithBoundary(
-    controllerId: string,
-    boundaryId: string
-  ): void {
-    console.log(
-      "=== addRelationControllerWithBoundary:",
-      controllerId,
-      boundaryId
-    );
-
-    const r = new Relation(
-      RobustiveRelationType.Sequential,
-      controllerId,
-      boundaryId
-    );
-    this.relations.push(r);
-  }
-
-  addRelationUsecaseWithBoundary(usecaseId: string, boundaryId: string): void {
-    console.log(
-      "=== addRelationControllerWithBoundary:",
-      usecaseId,
-      boundaryId
-    );
-
-    const r = new Relation(
-      RobustiveRelationType.Sequential,
-      usecaseId,
-      boundaryId
-    );
-    this.relations.push(r);
-  }
-
-  addRelationControllerWithEntity(
-    controllerId: string,
-    entityId: string
-  ): void {
-    console.log("=== addRelationControllerWithEntity:", controllerId, entityId);
-
-    const r = new Relation(
-      RobustiveRelationType.Related,
-      controllerId,
-      entityId
-    );
-    this.relations.push(r);
-  }
 
   /**
    * 握り潰そうとすると、解析OKの体で進んでしまい、別のエラーになる
@@ -412,8 +185,7 @@ class RobustiveRenderer implements DiagramRenderer {
   }
 }
 export type RobustiveParseResult = {
-  basics: RobustiveObject;
-  alternatives: RobustiveObject[];
+  scenario: RobustiveObject;
   hasError: boolean;
 };
 

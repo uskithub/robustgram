@@ -8,7 +8,7 @@
 
 %%
 
-"robustive"\s+            { /* console.log('Got Robustness Diagram', yytext,'#'); */ return 'RD'; }
+"robustive"\s+            { return 'RD'; }
 [\s]+                     /* skip all whitespace */
 [\n]+                     return 'NL';
 
@@ -37,17 +37,16 @@
 
 start
     : NL start 
-    | RD usecase { yy.setRootDoc($2); return $2; }
+    | RD usecase { return $2; }
     ;
 
 usecase
     : /* empty */ { 
-        console.log('★empty');
-        $$ = { basics: null, alternatives: [], hasError: false } 
-        // TODO: $$ = { scenario: null, hasError: false } 
+        yy.console.log('★empty');
+        $$ = { scenario: null, hasError: false } 
     }
     | usecase course {
-        console.log('★usecase line');
+        yy.console.log('★[usecase] is', $1, ', [course] is', $2);
 
         const addAlternativeCourse = (object, course) => {
             if (object.alias && course.alias && object.alias === course.alias) {
@@ -59,11 +58,10 @@ usecase
             addAlternativeCourse(next.to, course);
         };
     
-        if ($1.basics === null) {
-            console.log('★if [usecase]:', $1, ' [line]:', $2);
-            $1.basics = $2;
+        if ($1.scenario === null) {
+            $1.scenario = $2;
         } else {
-            addAlternativeCourse($1.basics, $2);
+            addAlternativeCourse($1.scenario, $2);
         }
         $1.hasError = yy.hasError;
         $$ = $1;
@@ -73,7 +71,7 @@ usecase
 course
     : objects leftovers {
         /* 始まりが決まる */
-        console.log('★★★ beginWith: object=',$1, 'leftovers=', $2);
+        yy.console.log('★★★ begin with', $1, ', [leftovers] is', $2);
         if ($1.relations) {
             $1.relations = $1.relations.concat($2);
         } else {
@@ -88,14 +86,13 @@ course
     }
     | alias leftovers {
         /* 始まりが決まる */
-        console.log('☆☆☆ beginWith: alias=',$1, 'leftovers=', $2);
+        yy.console.log('☆☆☆ begin with [alias]', $1, ', [leftovers] is', $2);
         $$ = { alias: $1, relations: $2 };
     }
     ;
 
 leftovers
     : relation objects {
-        console.log('1 related with', $2);
         if ($1.type === 'related') {
             if ($2.type !== 'boundary' && ((Array.isArray($2) && $2[0].type !== 'entity') || (!Array.isArray($2) && $2.type !== 'entity'))) {
                 $1.violating = '"Related" can only be connected to Boundary or Entity.'
@@ -116,15 +113,12 @@ leftovers
         if (Array.isArray($2)) {
             const relations = $2.map(o => { return { ...$1, to: o } });
             $$ = relations;
-            // $2.forEach(o => yy.addObject(o));
         } else {
             const relation = { ...$1, to: $2 };
             $$ = [relation];
-            // yy.addObject($2);
         }
     }
     | relation objects leftovers {
-        console.log('3 related with', $2, $3);
         if (Array.isArray($2)) { /* when only [{ type: 'entity', ... }] */
             const relations = $2.map(o => { return { ...$1, to: o } }).concat($3);
             /* [
@@ -133,7 +127,6 @@ leftovers
              * ]
              */
             $$ = relations;
-            // $2.forEach(o => yy.addObject(o));
         } else {
             if ($2.relations) {
                 /*
@@ -155,55 +148,49 @@ leftovers
             }
             const relation = { ...$1, to: $2 };
             $$ = [relation];
-            // yy.addObject($2);
         }
-        console.log('★★&&& $2:', $$);
     }
     ;
 
 relation
     : RELATED {
-        console.log("★[relation] is Related.")
+        yy.console.log("★[relation] is Related.")
         $$ = { type: 'related' };
     }
     | SEQUENCIAL {
-        console.log("★[relation] is Sequential.")
+        yy.console.log("★[relation] is Sequential.")
         $$ = { type: 'sequential' };
     }
     | CONDITIONAL TEXT TEXT_END {
-        console.log("★[relation] is Conditional.")
+        yy.console.log("★[relation] is Conditional.")
         $$ = { type: 'conditional', condition: $2 };
     }
     ;
 
 objects
     : ACTOR TEXT TEXT_END {
-        console.log(`★[object] is Actor labeled "${$2}".`);
+        yy.console.log(`★[object] is Actor labeled "${$2}".`);
         const object1 = { type: 'actor', text: $2 };
         $$ = object1;
     }
     | BOUNDARY TEXT TEXT_END {
-        console.log(`★[object] is Boundary labeled "${$2}".`);
+        yy.console.log(`★[object] is Boundary labeled "${$2}".`);
         const object2 = { type: 'boundary', text: $2 };
-        // yy.addObject(object2);
         $$ = object2;
     }
     | CONTROLLER TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
-        console.log(`★[object] is Controller labeled "${$2}" and has an alias "${$4}".`);
+        yy.console.log(`★[object] is Controller labeled "${$2}" and has an alias "${$4}".`);
         const object3 = { type: 'controller', text: $2, alias: $4 };
-        // yy.addObject(object3);
         $$ = object3;
     }
     | ENTITY TEXT TEXT_END {
-        console.log(`★[object] is Entity labeled "${$2}".`);
+        yy.console.log(`★[object] is Entity labeled "${$2}".`);
         const object4 = { type: 'entity', text: $2 };
-        // yy.addObject(object4);
         $$ = object4;
     }
     | USECASE TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
-        console.log(`★[object] is Usecase labeled "${$2}" and has an alias "${$4}".`);
+        yy.console.log(`★[object] is Usecase labeled "${$2}" and has an alias "${$4}".`);
         const object5 = { type: 'usecase', text: $2, alias: $4 };
-        // yy.addObject(object5);
         $$ = object5;
     }
     | ENTITY TEXT TEXT_END AND objects {
@@ -214,9 +201,8 @@ objects
             $5.violating = '"And" can only be used if all objects are Entity.'
             yy.hasError = true;
         }
-        console.log(`★[object] is Entity labeled "${$2}" and "${$5}".`);
+        yy.console.log(`★[object] is Entity labeled "${$2}" and "${$5}".`);
         const object6 = { type: 'entity', text: $2 };
-        // yy.addObject(object6);
         if (Array.isArray($5)){
             $5.unshift(object6)
             $$ = $5;
@@ -228,7 +214,7 @@ objects
 
 alias
     : DOLLAR ALIAS {
-        console.log(`★[alias] is "${$2}".`);
+        yy.console.log(`★[alias] is "${$2}".`);
         $$ = $2;
     }
     ;
