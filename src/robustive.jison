@@ -43,32 +43,37 @@ start
 usecase
     : /* empty */ { 
         console.log('★empty');
-        $$ = { basics: null, alternatives:[], hasError: false } 
+        $$ = { basics: null, alternatives: [], hasError: false } 
+        // TODO: $$ = { scenario: null, hasError: false } 
     }
-    | usecase line {
-        if ($2 != 'nl') {
+    | usecase course {
+        console.log('★usecase line');
+
+        const addAlternativeCourse = (object, course) => {
+            if (object.alias && course.alias && object.alias === course.alias) {
+                object.relations = object.relations.concat(course.relations);
+                return;
+            }
+            const next = object.relations.find(r => r.to.type !== 'entity');
+            if (!next) return;
+            addAlternativeCourse(next.to, course);
+        };
+    
+        if ($1.basics === null) {
             console.log('★if [usecase]:', $1, ' [line]:', $2);
             $1.basics = $2;
-            $1.hasError = yy.hasError;
-            $$ = $1;
         } else {
-            console.log('★else [usecase]:', $1, ' [line]:', $2);
+            addAlternativeCourse($1.basics, $2);
         }
+        $1.hasError = yy.hasError;
+        $$ = $1;
     }
     ;
 
-line
-	: scenario { 
-        console.log('★[line] is [scenario]:', $1);
-        $$ = $1;
-    }
-	| NL { $$='nl'; }
-	;
-
-scenario
+course
     : objects leftovers {
-        /* 始まりが決まる*/
-        console.log('★beginWith: object=',$1, 'leftovers=', $2);
+        /* 始まりが決まる */
+        console.log('★★★ beginWith: object=',$1, 'leftovers=', $2);
         if ($1.relations) {
             $1.relations = $1.relations.concat($2);
         } else {
@@ -78,8 +83,13 @@ scenario
             $1.violating = 'Only Actor comes first in the basic course.'
             yy.hasError = true;
         }
-        yy.addObject($1);
+        // yy.addObject($1);
         $$ = $1;
+    }
+    | alias leftovers {
+        /* 始まりが決まる */
+        console.log('☆☆☆ beginWith: alias=',$1, 'leftovers=', $2);
+        $$ = { alias: $1, relations: $2 };
     }
     ;
 
@@ -106,9 +116,11 @@ leftovers
         if (Array.isArray($2)) {
             const relations = $2.map(o => { return { ...$1, to: o } });
             $$ = relations;
+            // $2.forEach(o => yy.addObject(o));
         } else {
             const relation = { ...$1, to: $2 };
             $$ = [relation];
+            // yy.addObject($2);
         }
     }
     | relation objects leftovers {
@@ -120,7 +132,8 @@ leftovers
              *   { type: 'sequential', to: { type: 'controller', ... } <--- $3
              * ]
              */
-            $$ = relations; 
+            $$ = relations;
+            // $2.forEach(o => yy.addObject(o));
         } else {
             if ($2.relations) {
                 /*
@@ -142,14 +155,9 @@ leftovers
             }
             const relation = { ...$1, to: $2 };
             $$ = [relation];
-            yy.addObject($2);
-            console.log('★★ $2:', $$);
+            // yy.addObject($2);
         }
-    }
-    | alias leftovers {
-        const mycon = yy.getObject('controller', $1)
-        console.log(`★Alias: ${$1}`, mycon, $2);
-        mycon.relations.push($2);
+        console.log('★★&&& $2:', $$);
     }
     ;
 
@@ -189,7 +197,7 @@ objects
     | ENTITY TEXT TEXT_END {
         console.log(`★[object] is Entity labeled "${$2}".`);
         const object4 = { type: 'entity', text: $2 };
-        yy.addObject(object4);
+        // yy.addObject(object4);
         $$ = object4;
     }
     | USECASE TEXT TEXT_END_ALIAS_START ALIAS ALIAS_END {
