@@ -411,12 +411,14 @@ describe("Parsing with robustive.jison", () => {
     });
 
     describe("代替コース", async () => {
-      it("$checkSession -->[Condition] Controller が解析できること", async () => {
+      it("$alias -->[Condition] Controller が解析できること", async () => {
         const text = `robustive
     A[User] --- B[SignIn]
         -->[touch button] C[App checks if the user has a session](checkSession)
             --- E[UserInfo], E[Version]
         -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
+        --> C[show home](showHome)
+        --> B[Home]
     
     $checkSession -->[somethng error occurred] C[show error](showError)
                   --> B[Error]`;
@@ -467,16 +469,114 @@ describe("Parsing with robustive.jison", () => {
         expect(result.hasError).toBeFalsy();
       });
 
-      it("$checkSession -->[Condition] Controller が解析できること", async () => {
+      it("複数の $alias -->[Condition] Controller が解析できること", async () => {
         const text = `robustive
     A[User] --- B[SignIn]
         -->[touch button] C[App checks if the user has a session](checkSession)
             --- E[UserInfo], E[Version]
         -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
+        --> C[show home](showHome)
+        --> B[Home]
     
     $checkSession -->[session dose not exist] U[User signs up](SignUp)
+                  -->[success to sign up] $showHome
     $checkSession -->[somethng error occurred] C[show error](showError)
                   --> B[Error]`;
+
+        const result = await d.parse(text);
+
+        console.debug("***", util.inspect(result, { depth: Infinity }));
+
+        expect(result).not.toBeNull();
+
+        const relations =
+          result.scenario.relations[0].to.relations[0].to.relations;
+        expect(relations[0].type).toBe(RobustiveRelationType.Related);
+        expect(relations[0].violating).toBeUndefined();
+        expect(relations[0].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[0].to.text).toBe("UserInfo");
+        expect(relations[0].to.violating).toBeUndefined();
+
+        expect(relations[1].type).toBe(RobustiveRelationType.Related);
+        expect(relations[1].violating).toBeUndefined();
+        expect(relations[1].to.type).toBe(RobustiveObjectType.Entity);
+        expect(relations[1].to.text).toBe("Version");
+        expect(relations[1].to.violating).toBeUndefined();
+
+        expect(relations[2].type).toBe(RobustiveRelationType.Conditional);
+        expect(relations[2].condition).toBe("session exists");
+        expect(relations[2].violating).toBeUndefined();
+        expect(relations[2].to.type).toBe(RobustiveObjectType.Controller);
+        expect(relations[2].to.text).toBe(
+          "App updates signin status to 'signing-in'"
+        );
+        expect(relations[2].to.alias).toBe("updateStatus");
+        expect(relations[2].to.violating).toBeUndefined();
+        expect(relations[2].to.relations[0].type).toBe(
+          RobustiveRelationType.Sequential
+        );
+        expect(relations[2].to.relations[0].to.type).toBe(
+          RobustiveObjectType.Controller
+        );
+        expect(relations[2].to.relations[0].to.text).toBe("show home");
+        expect(relations[2].to.relations[0].to.alias).toBe("showHome");
+        expect(relations[2].to.relations[0].to.violating).toBeUndefined();
+
+        expect(relations[2].to.relations[0].to.relations[0].type).toBe(
+          RobustiveRelationType.Sequential
+        );
+        expect(relations[2].to.relations[0].to.relations[0].to.type).toBe(
+          RobustiveObjectType.Boundary
+        );
+        expect(relations[2].to.relations[0].to.relations[0].to.text).toBe(
+          "Home"
+        );
+        expect(
+          relations[2].to.relations[0].to.relations[0].to.violating
+        ).toBeUndefined();
+
+        expect(relations[3].type).toBe(RobustiveRelationType.Conditional);
+        expect(relations[3].condition).toBe("session dose not exist");
+        expect(relations[3].violating).toBeUndefined();
+        expect(relations[3].to.type).toBe(RobustiveObjectType.Usecase);
+        expect(relations[3].to.text).toBe("User signs up");
+        expect(relations[3].to.alias).toBe("SignUp");
+        expect(relations[3].to.violating).toBeUndefined();
+        expect(relations[3].to.relations[0].type).toBe(
+          RobustiveRelationType.Conditional
+        );
+        expect(relations[3].to.relations[0].violating).toBeUndefined();
+        expect(relations[3].to.relations[0].to).toBe("showHome");
+
+        expect(relations[4].type).toBe(RobustiveRelationType.Conditional);
+        expect(relations[4].condition).toBe("somethng error occurred");
+        expect(relations[4].violating).toBeUndefined();
+        expect(relations[4].to.type).toBe(RobustiveObjectType.Controller);
+        expect(relations[4].to.text).toBe("show error");
+        expect(relations[4].to.alias).toBe("showError");
+        expect(relations[4].to.violating).toBeUndefined();
+        expect(relations[4].to.relations[0].type).toBe(
+          RobustiveRelationType.Sequential
+        );
+        expect(relations[4].to.relations[0].to.type).toBe(
+          RobustiveObjectType.Boundary
+        );
+        expect(relations[4].to.relations[0].to.text).toBe("Error");
+
+        expect(result.hasError).toBeFalsy();
+      });
+
+      it("複数の $alias -->[Condition] Controller が解析できること", async () => {
+        const text = `robustive
+    A[User] --- B[SignIn]
+        -->[touch button] C[App checks if the user has a session](checkSession)
+            --- E[UserInfo], E[Version]
+        -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
+        --> C[show home](showHome)
+        --> B[Home]
+    
+    $checkSession -->[session dose not exist] U[User signs up](SignUp)
+                  -->[success to sign up] $shoHome`;
 
         const result = await d.parse(text);
 
@@ -515,21 +615,6 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[3].to.text).toBe("User signs up");
         expect(relations[3].to.alias).toBe("SignUp");
         expect(relations[3].to.violating).toBeUndefined();
-
-        expect(relations[4].type).toBe(RobustiveRelationType.Conditional);
-        expect(relations[4].condition).toBe("somethng error occurred");
-        expect(relations[4].violating).toBeUndefined();
-        expect(relations[4].to.type).toBe(RobustiveObjectType.Controller);
-        expect(relations[4].to.text).toBe("show error");
-        expect(relations[4].to.alias).toBe("showError");
-        expect(relations[4].to.violating).toBeUndefined();
-        expect(relations[4].to.relations[0].type).toBe(
-          RobustiveRelationType.Sequential
-        );
-        expect(relations[4].to.relations[0].to.type).toBe(
-          RobustiveObjectType.Boundary
-        );
-        expect(relations[4].to.relations[0].to.text).toBe("Error");
 
         expect(result.hasError).toBeFalsy();
       });

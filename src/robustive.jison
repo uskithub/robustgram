@@ -150,6 +150,14 @@ leftovers
             $$ = [relation];
         }
     }
+    | relation alias {
+        if ($1.type === 'related') {
+            $1.violating = '"Related" can only be connected to Boundary or Entity.'
+            yy.hasError = true;
+        }
+        const relation = { ...$1, to: $2 };
+        $$ = [relation];
+    }
     ;
 
 relation
