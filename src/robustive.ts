@@ -127,12 +127,24 @@ export class RobustiveParseSyntaxError extends Error {
 }
 
 class RobustiveDB extends BaseDiagramDB {
-  private relations: Relation[] = [];
   private _hasError: boolean = false;
 
   set hasError(value: boolean) {
     this._hasError = value;
   }
+
+  get hasError(): boolean {
+    return this._hasError;
+  }
+
+  // JISON内では this が適切に設定されていないためか、getter/setter が使えない
+  markAsError = (): void => {
+    this.hasError = true;
+  };
+
+  getErrorState = (): boolean => {
+    return this.hasError;
+  };
 
   clear = (): void => {
     this._hasError = false;

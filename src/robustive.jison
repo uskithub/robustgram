@@ -63,7 +63,7 @@ usecase
         } else {
             addAlternativeCourse($1.scenario, $2);
         }
-        $1.hasError = yy.hasError;
+        $1.hasError = yy.getErrorState();
         $$ = $1;
     }
     ;
@@ -79,7 +79,7 @@ course
         }
         if ($1.type !== 'actor') {
             $1.violating = 'Only Actor comes first in the basic course.'
-            yy.hasError = true;
+            yy.markAsError();
         }
         // yy.addObject($1);
         $$ = $1;
@@ -96,17 +96,17 @@ leftovers
         if ($1.type === 'related') {
             if ($2.type !== 'boundary' && ((Array.isArray($2) && $2[0].type !== 'entity') || (!Array.isArray($2) && $2.type !== 'entity'))) {
                 $1.violating = '"Related" can only be connected to Boundary or Entity.'
-                yy.hasError = true;
+                yy.markAsError();
             }
         } else if ($1.type === 'sequential') {
             if ($2.type !== 'boundary' && $2.type !== 'controller' && $2.type !== 'usecase') {
                 $1.violating = '"Sequential" can only be connected to Boundary, Controller or Usecase.'
-                yy.hasError = true;
+                yy.markAsError();
             }
         } else if ($1.type === 'conditional') {
             if ($2.type !== 'boundary' && $2.type !== 'controller' && $2.type !== 'usecase') {
                 $1.violating = '"Conditional" can only be connected to Boundary, Controller or Usecase.'
-                yy.hasError = true;
+                yy.markAsError();
             }
         }
 
@@ -153,7 +153,7 @@ leftovers
     | relation alias {
         if ($1.type === 'related') {
             $1.violating = '"Related" can only be connected to Boundary or Entity.'
-            yy.hasError = true;
+            yy.markAsError();
         }
         const relation = { ...$1, to: $2 };
         $$ = [relation];
@@ -204,10 +204,10 @@ objects
     | ENTITY TEXT TEXT_END AND objects {
         if (Array.isArray($5) && $5[0].type !== 'entity') {
             $5[0].violating = '"And" can only be used if all objects are Entity.'
-            yy.hasError = true;
+            yy.markAsError();
         } else if (!Array.isArray($5) && $5.type !== 'entity') {
             $5.violating = '"And" can only be used if all objects are Entity.'
-            yy.hasError = true;
+            yy.markAsError();
         }
         yy.console.log(`★[object] is Entity labeled "${$2}" and "${$5}".`);
         const object6 = { type: 'entity', text: $2 };

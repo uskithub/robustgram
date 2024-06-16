@@ -20,9 +20,9 @@
                   --> C[App checks if the user has a session](checkSession)
                       --- E[uuid], E[name]
                   -->[hoge is true] U[login](login)
-                  
           $checkSession -->[hoge is false] C[show home](showHome)
-                --> B[Home]
+                  --> B[Home]
+          $checkSession -->[hoge is null] $showHome
       </pre>
       <pre class="">
         robustive
@@ -36,6 +36,8 @@
                   --> B[Home]
   
           $checkSession -->[addObjectしたContollerにaliasがない](false) U[User signs up](SignUp);
+          $checkSession -->[hoge is false] C[show home](showHome)
+        --> B[Home]
       </pre>
     </div>
     <script type="module" src="/src/main.ts"></script>

@@ -7,6 +7,8 @@ import {
 } from "./robustive";
 import util from "node:util";
 
+// console.debug("***", util.inspect(result, { depth: Infinity }));
+
 describe("Parsing with robustive.jison", () => {
   const d = new RobustiveDiagram();
 
@@ -64,7 +66,7 @@ describe("Parsing with robustive.jison", () => {
 
       const result = await d.parse(text);
       expect(result).not.toBeNull();
-      expect(result.hasError).toBeFalsy();
+      expect(result.hasError).toBe(false);
     });
 
     describe("異常系", async () => {
@@ -94,7 +96,7 @@ describe("Parsing with robustive.jison", () => {
           RobustiveObjectType.Boundary
         );
         expect(result.scenario.relations[0].to.text).toBe("SignIn");
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       describe("異常系", async () => {
@@ -189,7 +191,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relation.to.text).toBe("App checks if the user has a session");
         expect(relation.to.alias).toBe("checkSession");
         expect(relation.to.violating).toBeUndefined();
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Boundary -->[Condition] Usecase が解析できること", async () => {
@@ -209,7 +211,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relation.to.text).toBe("User signs up");
         expect(relation.to.alias).toBe("signUp");
         expect(relation.to.violating).toBeUndefined();
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Controller --- Entity が解析できること", async () => {
@@ -229,7 +231,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relation.to.type).toBe(RobustiveObjectType.Entity);
         expect(relation.to.text).toBe("UserInfo");
         expect(relation.to.violating).toBeUndefined();
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Controller --- Entity, Entity が解析できること", async () => {
@@ -256,7 +258,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[1].to.text).toBe("Version");
         expect(relations[1].to.violating).toBeUndefined();
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Controller --- Entity, Entity, Entity が解析できること", async () => {
@@ -282,7 +284,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[1].to.text).toBe("Version");
         expect(relations[1].to.violating).toBeUndefined();
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Controller --- Entity, Entity --> Controller が解析できること", async () => {
@@ -318,7 +320,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[2].to.alias).toBe("updateStatus");
         expect(relations[2].to.violating).toBeUndefined();
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("Controller --- Entity, Entity -->[Condition] Controller が解析できること", async () => {
@@ -355,7 +357,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[2].to.alias).toBe("updateStatus");
         expect(relations[2].to.violating).toBeUndefined();
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       describe("異常系", async () => {
@@ -394,7 +396,7 @@ describe("Parsing with robustive.jison", () => {
             '"Related" can only be connected to Boundary or Entity.'
           );
 
-          expect(result.hasError).toBeTruthy();
+          expect(result.hasError).toBe(true);
         });
 
         it.todo("Boundary --> Actor は構文違反となること");
@@ -466,7 +468,7 @@ describe("Parsing with robustive.jison", () => {
         );
         expect(relations[3].to.relations[0].to.text).toBe("Error");
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("複数の $alias -->[Condition] Controller が解析できること", async () => {
@@ -484,8 +486,6 @@ describe("Parsing with robustive.jison", () => {
                   --> B[Error]`;
 
         const result = await d.parse(text);
-
-        console.debug("***", util.inspect(result, { depth: Infinity }));
 
         expect(result).not.toBeNull();
 
@@ -563,7 +563,7 @@ describe("Parsing with robustive.jison", () => {
         );
         expect(relations[4].to.relations[0].to.text).toBe("Error");
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
 
       it("複数の $alias -->[Condition] Controller が解析できること", async () => {
@@ -579,8 +579,6 @@ describe("Parsing with robustive.jison", () => {
                   -->[success to sign up] $shoHome`;
 
         const result = await d.parse(text);
-
-        console.debug("***", util.inspect(result, { depth: Infinity }));
 
         expect(result).not.toBeNull();
 
@@ -616,7 +614,7 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[3].to.alias).toBe("SignUp");
         expect(relations[3].to.violating).toBeUndefined();
 
-        expect(result.hasError).toBeFalsy();
+        expect(result.hasError).toBe(false);
       });
     });
   });
