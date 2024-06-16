@@ -418,7 +418,8 @@ describe("Parsing with robustive.jison", () => {
             --- E[UserInfo], E[Version]
         -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
     
-    $checkSession -->[session dose not exist] U[User signs up](SignUp)`;
+    $checkSession -->[somethng error occurred] C[show error](showError)
+                  --> B[Error]`;
 
         const result = await d.parse(text);
 
@@ -449,12 +450,19 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[2].to.violating).toBeUndefined();
 
         expect(relations[3].type).toBe(RobustiveRelationType.Conditional);
-        expect(relations[3].condition).toBe("session dose not exist");
+        expect(relations[3].condition).toBe("somethng error occurred");
         expect(relations[3].violating).toBeUndefined();
-        expect(relations[3].to.type).toBe(RobustiveObjectType.Usecase);
-        expect(relations[3].to.text).toBe("User signs up");
-        expect(relations[3].to.alias).toBe("SignUp");
+        expect(relations[3].to.type).toBe(RobustiveObjectType.Controller);
+        expect(relations[3].to.text).toBe("show error");
+        expect(relations[3].to.alias).toBe("showError");
         expect(relations[3].to.violating).toBeUndefined();
+        expect(relations[3].to.relations[0].type).toBe(
+          RobustiveRelationType.Sequential
+        );
+        expect(relations[3].to.relations[0].to.type).toBe(
+          RobustiveObjectType.Boundary
+        );
+        expect(relations[3].to.relations[0].to.text).toBe("Error");
 
         expect(result.hasError).toBeFalsy();
       });
@@ -467,7 +475,8 @@ describe("Parsing with robustive.jison", () => {
         -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
     
     $checkSession -->[session dose not exist] U[User signs up](SignUp)
-    $checkSession -->[somethng error occurred] B[Error]`;
+    $checkSession -->[somethng error occurred] C[show error](showError)
+                  --> B[Error]`;
 
         const result = await d.parse(text);
 
@@ -510,9 +519,17 @@ describe("Parsing with robustive.jison", () => {
         expect(relations[4].type).toBe(RobustiveRelationType.Conditional);
         expect(relations[4].condition).toBe("somethng error occurred");
         expect(relations[4].violating).toBeUndefined();
-        expect(relations[4].to.type).toBe(RobustiveObjectType.Boundary);
-        expect(relations[4].to.text).toBe("Error");
+        expect(relations[4].to.type).toBe(RobustiveObjectType.Controller);
+        expect(relations[4].to.text).toBe("show error");
+        expect(relations[4].to.alias).toBe("showError");
         expect(relations[4].to.violating).toBeUndefined();
+        expect(relations[4].to.relations[0].type).toBe(
+          RobustiveRelationType.Sequential
+        );
+        expect(relations[4].to.relations[0].to.type).toBe(
+          RobustiveObjectType.Boundary
+        );
+        expect(relations[4].to.relations[0].to.text).toBe("Error");
 
         expect(result.hasError).toBeFalsy();
       });
