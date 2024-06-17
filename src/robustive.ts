@@ -11,6 +11,7 @@ import {
 import parser from "./robustive.jison";
 import { graphlib, render } from "dagre-d3-es";
 import { curveBasis, select } from "d3";
+import { drawControl } from "./shapes";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -207,15 +208,15 @@ class RobustiveRenderer implements DiagramRenderer {
       return {};
     });
 
-    const _draw = (obj: RobustiveObject): void => {};
+    // const _draw = (obj: RobustiveObject): void => {};
 
-    _draw(parseResult.scenario);
+    // _draw(parseResult.scenario);
 
     g.setNode("root", {
       label: ` App Exp \n Optimization \n Improvement \n (Facebook)`,
       width: 70,
       height: 60,
-      shape: "circle",
+      shape: "control",
       style: "stroke: black; stroke-width: 1px; ",
       labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
     });
@@ -224,7 +225,7 @@ class RobustiveRenderer implements DiagramRenderer {
       label: "PUT",
       width: 50,
       height: 20,
-      shape: "ellipse",
+      shape: "control",
       style: "stroke: black; fill:blue; stroke-width: 1px; ",
       labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
     });
@@ -240,7 +241,7 @@ class RobustiveRenderer implements DiagramRenderer {
       label: "CDT",
       width: 50,
       height: 20,
-      shape: "ellipse",
+      shape: "control",
     });
 
     g.setEdge("root", "cdt", {
@@ -256,6 +257,8 @@ class RobustiveRenderer implements DiagramRenderer {
 
     // Create the renderer
     const r = new render();
+    r.shapes().control = drawControl;
+
     // Run the renderer. This is what draws the final graph.
     r(element, g);
   }

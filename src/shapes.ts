@@ -1,25 +1,19 @@
 import * as d3 from "d3";
 import { intersect } from "dagre-d3-es";
 
-export type Control = {
-  id: string;
-  x: number;
-  y: number;
-  label: string;
-};
-/**
- * _render.shapes().control = drawControl;
- * @param parent
- * @param bbox
- * @param node
- * @returns
- */
 export const drawControl = (
   parent: d3.Selection<SVGGElement, unknown, null, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
-  const radius = 40;
+  const radius = 50;
+  const arrow_size = radius / 3;
+
+  const strokeColor =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "white"
+      : "black";
 
   const group = parent
     .append<SVGGElement>("g")
@@ -28,23 +22,22 @@ export const drawControl = (
   group
     .append<SVGCircleElement>("circle")
     .attr("r", radius)
-    .attr("fill", "lightblue")
-    .attr("stroke", "black")
+    .attr("fill", "none")
+    .attr("stroke", strokeColor)
     .attr("stroke-width", 2);
 
-  // 矢羽を描画
-  const arrowSize = 10;
-  const points = [
-    { x: radius, y: -arrowSize },
-    { x: radius + arrowSize, y: 0 },
-    { x: radius, y: arrowSize },
-  ];
-
   group
-    .append<SVGPolygonElement>("polygon")
-    .attr("points", points.map((d) => `${d.x},${d.y}`).join(" "))
-    .attr("fill", "red")
-    .attr("stroke", "black")
+    .append("path")
+    .attr(
+      "d",
+      d3.line()([
+        [arrow_size, -(radius + arrow_size / 2)],
+        [0, -radius],
+        [arrow_size, -(radius - arrow_size / 2)],
+      ])
+    )
+    .attr("stroke", strokeColor)
+    .attr("fill", "none")
     .attr("stroke-width", 2);
 
   group
@@ -52,20 +45,10 @@ export const drawControl = (
     .attr("y", 5)
     .attr("text-anchor", "middle")
     .attr("font-size", "16px")
-    .attr("fill", "black")
+    .attr("fill", strokeColor)
     .text(node.label);
 
-  node.intersect = function (point: any) {
-    // const x = point.x - node.x;
-    // const y = point.y - node.y;
-    // const dist = Math.sqrt(x * x + y * y);
-    // if (dist < radius) {
-    //   return {
-    //     x: node.x + (x * radius) / dist,
-    //     y: node.y + (y * radius) / dist,
-    //   };
-    // }
-    // return point;
+  node.intersect = (point: { x: number; y: number }) => {
     return intersect.circle.intersectCircle(node, radius, point);
   };
 
