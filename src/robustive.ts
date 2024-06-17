@@ -11,7 +11,7 @@ import {
 import parser from "./robustive.jison";
 import { graphlib, render } from "dagre-d3-es";
 import { curveBasis, select } from "d3";
-import { drawControl } from "./shapes";
+import { drawActor, drawBoundary, drawControl, drawEntity } from "./shapes";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -201,7 +201,7 @@ class RobustiveRenderer implements DiagramRenderer {
       compound: true,
     }).setGraph({});
 
-    g.graph().rankdir = "LR";
+    // g.graph().rankdir = "LR";
 
     // Default to assigning a new object as a label for each new edge.
     g.setDefaultEdgeLabel(() => {
@@ -213,10 +213,10 @@ class RobustiveRenderer implements DiagramRenderer {
     // _draw(parseResult.scenario);
 
     g.setNode("root", {
-      label: ` App Exp \n Optimization \n Improvement \n (Facebook)`,
+      label: "",
       width: 70,
       height: 60,
-      shape: "control",
+      shape: "actor",
       style: "stroke: black; stroke-width: 1px; ",
       labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
     });
@@ -225,31 +225,31 @@ class RobustiveRenderer implements DiagramRenderer {
       label: "PUT",
       width: 50,
       height: 20,
-      shape: "control",
+      shape: "actor",
       style: "stroke: black; fill:blue; stroke-width: 1px; ",
       labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
     });
 
-    g.setEdge("root", "put", {
-      curve: curveBasis,
-      style:
-        "stroke: blue; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
-      arrowheadStyle: "fill: blue",
-    });
+    // g.setEdge("root", "put", {
+    //   curve: curveBasis,
+    //   style:
+    //     "stroke: blue; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
+    //   arrowheadStyle: "fill: blue",
+    // });
 
-    g.setNode("cdt", {
-      label: "CDT",
-      width: 50,
-      height: 20,
-      shape: "control",
-    });
+    // g.setNode("cdt", {
+    //   label: "CDT",
+    //   width: 50,
+    //   height: 20,
+    //   shape: "control",
+    // });
 
-    g.setEdge("root", "cdt", {
-      curve: curveBasis,
-      style:
-        "stroke: gray; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
-      arrowheadStyle: "fill: gray",
-    });
+    // g.setEdge("root", "cdt", {
+    //   curve: curveBasis,
+    //   style:
+    //     "stroke: gray; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
+    //   arrowheadStyle: "fill: gray",
+    // });
 
     const root = select("body");
     const svg = root.select(`[id="${id}"]`);
@@ -257,7 +257,10 @@ class RobustiveRenderer implements DiagramRenderer {
 
     // Create the renderer
     const r = new render();
+    r.shapes().actor = drawActor;
     r.shapes().control = drawControl;
+    r.shapes().entity = drawEntity;
+    r.shapes().boundary = drawBoundary;
 
     // Run the renderer. This is what draws the final graph.
     r(element, g);
