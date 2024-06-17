@@ -4,10 +4,13 @@ import {
   DiagramDefinition,
   DiagramRenderer,
   ParseErrorDetail,
+  ParseResult,
   ParserDefinition,
 } from "./diagram";
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
+import { graphlib, render } from "dagre-d3-es";
+import { curveBasis, select } from "d3";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -179,27 +182,88 @@ class RobustiveDB extends BaseDiagramDB {
 }
 
 class RobustiveRenderer implements DiagramRenderer {
-  constructor(private db: DiagramDB) {}
-  draw(text: string, id: string, version: string): Promise<void>;
-  draw(text: string, id: string, version: string, db: DiagramDB): Promise<void>;
+  constructor() {}
   draw(
     text: string,
     id: string,
     version: string,
-    db: DiagramDB = this.db
+    parseResult: ParseResult
   ): Promise<void> {
     console.log("========= start draw =========");
     console.log("text:", text);
     console.log("id:", id);
     console.log("version:", version);
-    console.log("db:", db);
-    throw new Error("Method not implemented.");
+    console.log("parseResult:", parseResult);
+
+    const g = new graphlib.Graph({
+      multigraph: true,
+      compound: true,
+    }).setGraph({});
+
+    g.graph().rankdir = "LR";
+
+    // Default to assigning a new object as a label for each new edge.
+    g.setDefaultEdgeLabel(() => {
+      return {};
+    });
+
+    const _draw = (obj: RobustiveObject): void => {};
+
+    _draw(parseResult.scenario);
+
+    g.setNode("root", {
+      label: ` App Exp \n Optimization \n Improvement \n (Facebook)`,
+      width: 70,
+      height: 60,
+      shape: "circle",
+      style: "stroke: black; stroke-width: 1px; ",
+      labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
+    });
+
+    g.setNode("put", {
+      label: "PUT",
+      width: 50,
+      height: 20,
+      shape: "ellipse",
+      style: "stroke: black; fill:blue; stroke-width: 1px; ",
+      labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
+    });
+
+    g.setEdge("root", "put", {
+      curve: curveBasis,
+      style:
+        "stroke: blue; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
+      arrowheadStyle: "fill: blue",
+    });
+
+    g.setNode("cdt", {
+      label: "CDT",
+      width: 50,
+      height: 20,
+      shape: "ellipse",
+    });
+
+    g.setEdge("root", "cdt", {
+      curve: curveBasis,
+      style:
+        "stroke: gray; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
+      arrowheadStyle: "fill: gray",
+    });
+
+    const root = select("body");
+    const svg = root.select(`[id="${id}"]`);
+    const element = root.select("#" + id + " g");
+
+    // Create the renderer
+    const r = new render();
+    // Run the renderer. This is what draws the final graph.
+    r(element, g);
   }
 }
-export type RobustiveParseResult = {
+export interface RobustiveParseResult extends ParseResult {
   scenario: RobustiveObject;
   hasError: boolean;
-};
+}
 
 export class RobustiveDiagram implements DiagramDefinition {
   parser: ParserDefinition;
@@ -211,18 +275,17 @@ export class RobustiveDiagram implements DiagramDefinition {
     parser.yy = db;
     this.parser = parser;
     this.db = db;
-    this.renderer = new RobustiveRenderer(db);
+    this.renderer = new RobustiveRenderer();
   }
 
   clear(): void {
     this.db.clear();
   }
 
-  // TODO: parseの型を決める
   parse(text: string): Promise<RobustiveParseResult> {
     return new Promise((resolve, reject) => {
       try {
-        const parseResult = this.parser.parse(text);
+        const parseResult = this.parser.parse(text) as RobustiveParseResult;
         resolve(parseResult);
       } catch (e) {
         reject(e);

@@ -20,19 +20,21 @@ export interface DiagramRenderer {
     text: string,
     id: string,
     version: string,
-    db?: DiagramDB
+    parseResult: ParseResult
   ) => Promise<void>;
 }
 
+export interface ParseResult {}
+
 export interface ParserDefinition {
   yy: DiagramDB;
-  parse: (text: string) => any; // parserで返すトップの $$ が返る
+  parse: (text: string) => ParseResult; // parserで返すトップの $$ が返る
 }
 
 export interface DiagramDefinition {
   db: DiagramDB;
-  renderer: DiagramRenderer;
   parser: ParserDefinition;
+  renderer: DiagramRenderer;
 }
 
 const diagrams: Record<string, DiagramDefinition> = {};
@@ -109,29 +111,31 @@ export class Diagram {
       console.log("========= parser start =========", parser);
       const parseResult = parser.parse(text);
       console.log("========= parse end =========", parseResult);
+      return new Diagram(type, text, parseResult, renderer);
     } catch (e) {
       console.error(e);
       throw e;
     }
-
-    return new Diagram(type, text, db, parser, renderer);
   }
 
   private constructor(
     public type: string,
     public text: string,
-    public db: DiagramDB,
-    public parser: ParserDefinition,
+    // public db: DiagramDB,
+    // public parser: ParserDefinition,
+    public parseResult: ParseResult,
     public renderer: DiagramRenderer
   ) {}
 
   async render(id: string, version: string): Promise<void> {
-    console.log("========= render =========", this.text, id, version, this.db);
-    await this.renderer.draw(this.text, id, version, this.db);
-  }
-
-  getParser() {
-    return this.parser;
+    console.log(
+      "========= render =========",
+      this.text,
+      id,
+      version,
+      this.parseResult
+    );
+    await this.renderer.draw(this.text, id, version, this.parseResult);
   }
 
   getType() {
