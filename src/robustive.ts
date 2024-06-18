@@ -152,6 +152,12 @@ class RobustiveDB extends BaseDiagramDB {
   };
 }
 
+type Edge = {
+  from: string;
+  to: string;
+  type: RobustiveRelationType;
+};
+
 class RobustiveRenderer implements DiagramRenderer {
   constructor() {}
   draw(
@@ -186,36 +192,63 @@ class RobustiveRenderer implements DiagramRenderer {
         ? ["black", "white"]
         : ["white", "black"];
 
-    const _draw = (obj: RobustiveObject): void => {
+    const _draw = (obj: RobustiveObject): Edge[] => {
       const from = obj.alias ?? obj.text;
       g.setNode(from, {
         shape: obj.type,
       });
 
-      obj.relations?.forEach((relation) => {
-        _draw(relation.to);
-        const to = relation.to.alias ?? relation.to.text;
-        if (relation.type === RobustiveRelationType.Related) {
-          g.setEdge(from, to, {
-            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-            arrowhead: "undirected",
-          });
-        } else if (relation.type === RobustiveRelationType.Sequential) {
-          g.setEdge(from, to, {
-            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-            arrowhead: "vee",
-          });
-        } else {
-          g.setEdge(from, to, {
-            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-            arrowhead: "vee",
-            label: relation.condition,
-          });
-        }
-      });
+      return (
+        obj.relations?.reduce((edges, relation) => {
+          edges = edges.concat(_draw(relation.to));
+          const to = relation.to.alias ?? relation.to.text;
+          edges.push({ from, to, type: relation.type });
+          const name = `${from}_${relation.type}_${to}`;
+          if (relation.type === RobustiveRelationType.Related) {
+            g.setEdge(
+              from,
+              to,
+              {
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "undirected",
+                relation,
+              },
+              name
+            );
+          } else if (relation.type === RobustiveRelationType.Sequential) {
+            g.setEdge(
+              from,
+              to,
+              {
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "vee",
+                relation,
+              },
+              name
+            );
+          } else {
+            g.setEdge(
+              from,
+              to,
+              {
+                curve: d3.curveLinear,
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "vee",
+                label: relation.condition,
+                relation,
+              },
+              name
+            );
+          }
+          return edges;
+        }, new Array<Edge>()) ?? new Array<Edge>()
+      );
     };
 
-    _draw((parseResult as RobustiveParseResult).scenario);
+    const edges = _draw((parseResult as RobustiveParseResult).scenario);
 
     const root = d3.select("body");
     const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
@@ -232,6 +265,17 @@ class RobustiveRenderer implements DiagramRenderer {
 
     // Run the renderer. This is what draws the final graph.
     r(element, g);
+
+    edges.forEach((edge) => {
+      const edgeObj = g.edge(
+        edge.from,
+        edge.to,
+        `${edge.from}_${edge.type}_${edge.to}`
+      );
+
+      // TODO
+      console.log("edgeObj", edgeObj);
+    });
 
     // configutr svg size
     const node = svg.node();

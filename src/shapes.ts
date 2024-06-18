@@ -26,12 +26,14 @@ export const drawActor = (
   parent.selectAll("g.label").remove();
 
   const radius = 16;
+  const adjust_y = -20;
 
   const strokeColor =
     detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
-  const group = parent.append<SVGGElement>("g");
-  // .attr("transform", `translate(${bbox.width / 2},${bbox.height / 2})`);
+  const group = parent
+    .append<SVGGElement>("g")
+    .attr("transform", `translate(0, ${adjust_y})`);
 
   group
     .append<SVGCircleElement>("circle")
@@ -40,20 +42,22 @@ export const drawActor = (
     .attr("stroke", strokeColor)
     .attr("stroke-width", BASE_STROKE_WIDTH);
 
+  const neck = radius * 1.8;
+  const body = radius * 3.2;
   group
     .append("path")
     .attr(
       "d",
       d3.line()([
         [-radius * 1.6, radius * 1.6],
-        [0, radius * 1.8],
+        [0, neck],
         [0, radius],
-        [0, radius * 3.2],
+        [0, body],
         [-radius * 1.4, radius * 5],
-        [0, radius * 3.2],
+        [0, body],
         [radius * 1.4, radius * 5],
-        [0, radius * 3.2],
-        [0, radius * 1.8],
+        [0, body],
+        [0, neck],
         [radius * 1.6, radius * 1.6],
       ])
     )
@@ -70,34 +74,7 @@ export const drawActor = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    const cx = node.x; //+ bbox.width / 2;
-    const cy = node.y; //+ bbox.height / 2;
-
-    // Rectangle intersection algorithm from:
-    // http://math.stackexchange.com/questions/108113/find-edge-between-two-boxes
-    const dx = point.x - cx;
-    const dy = point.y - cy;
-    let w = node.width / 2;
-    let h = node.height / 2;
-
-    let sx, sy;
-    if (Math.abs(dy) * w > Math.abs(dx) * h) {
-      // Intersection is top or bottom of rect.
-      if (dy < 0) {
-        h = -h;
-      }
-      sx = dy === 0 ? 0 : (h * dx) / dy;
-      sy = h;
-    } else {
-      // Intersection is left or right of rect.
-      if (dx < 0) {
-        w = -w;
-      }
-      sx = w;
-      sy = dx === 0 ? 0 : (w * dy) / dx;
-    }
-
-    return { x: cx + sx, y: cy + sy };
+    return intersect.rect.intersectRect(node, point);
   };
 
   return group;
@@ -214,7 +191,7 @@ export const drawBoundary = (
   parent.selectAll("g.label").remove();
 
   const radius = 50;
-
+  const gap = (radius / 10) * 3;
   const strokeColor =
     detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
@@ -231,9 +208,9 @@ export const drawBoundary = (
     .attr(
       "d",
       d3.line()([
-        [-((radius / 10) * 13), (radius / 10) * 8],
-        [-((radius / 10) * 13), (-radius / 10) * 8],
-        [-((radius / 10) * 13), 0],
+        [-(radius + gap), (radius / 10) * 8],
+        [-(radius + gap), (-radius / 10) * 8],
+        [-(radius + gap), 0],
         [-radius, 0],
       ])
     )
@@ -250,8 +227,8 @@ export const drawBoundary = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    const cx = node.x; // + bbox.width / 2;
-    const cy = node.y; // + bbox.height / 2;
+    const cx = node.x - gap / 2;
+    const cy = node.y;
 
     // Rectangle intersection algorithm from:
     // http://math.stackexchange.com/questions/108113/find-edge-between-two-boxes
