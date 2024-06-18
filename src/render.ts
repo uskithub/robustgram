@@ -400,7 +400,7 @@ const render = async (
   // -------------------------------------------------------------------------------
   // Draw the diagram with the renderer
   try {
-    await diag.renderer.draw(text, id, version);
+    await diag.render(id, version);
   } catch (e) {
     console.error("Error drawing diagram", e);
     errorDraw(text, id, version);

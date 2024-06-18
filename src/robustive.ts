@@ -10,8 +10,8 @@ import {
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
 import { graphlib, render } from "dagre-d3-es";
-import { curveBasis, select } from "d3";
-import { drawActor, drawBoundary, drawControl, drawEntity } from "./shapes";
+import { select } from "d3";
+import { drawActor, drawBoundary, drawController, drawEntity } from "./shapes";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -25,7 +25,7 @@ type RobustiveObject = {
   text: string;
   alias?: string;
   violating?: string;
-  relations: RobustiveRelation[];
+  relations?: RobustiveRelation[];
 };
 
 class BaseDiagramDB implements DiagramDB {
@@ -72,44 +72,6 @@ export const RobustiveRelationType = {
 export type RobustiveRelationType =
   (typeof RobustiveRelationType)[keyof typeof RobustiveRelationType];
 
-class _Object {
-  constructor(
-    private _type: RobustiveObjectType,
-    private _text: string,
-    private _alias?: string
-  ) {}
-  get type(): string {
-    return this._type;
-  }
-  get text(): string {
-    return this._text;
-  }
-
-  get aliaas(): string | undefined {
-    return this._alias;
-  }
-}
-class Relation {
-  constructor(
-    private _type: RobustiveRelationType,
-    private _from: string,
-    private _to: string,
-    private _condition?: string
-  ) {}
-
-  get type(): string {
-    return this._type;
-  }
-  get from(): string {
-    return this._from;
-  }
-  get to(): string {
-    return this._to;
-  }
-  get condition(): string | undefined {
-    return this._condition;
-  }
-}
 export class RobustiveParseError extends Error {
   constructor(message: string) {
     super(message);
@@ -192,8 +154,6 @@ class RobustiveRenderer implements DiagramRenderer {
   ): Promise<void> {
     console.log("========= start draw =========");
     console.log("text:", text);
-    console.log("id:", id);
-    console.log("version:", version);
     console.log("parseResult:", parseResult);
 
     const g = new graphlib.Graph({
@@ -201,34 +161,57 @@ class RobustiveRenderer implements DiagramRenderer {
       compound: true,
     }).setGraph({});
 
-    // g.graph().rankdir = "LR";
+    g.graph().rankdir = "LR";
 
     // Default to assigning a new object as a label for each new edge.
     g.setDefaultEdgeLabel(() => {
       return {};
     });
 
-    // const _draw = (obj: RobustiveObject): void => {};
+    const [fontColor, strokeColor] =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? ["black", " white"]
+        : ["white", "black"];
 
-    // _draw(parseResult.scenario);
+    const _draw = (obj: RobustiveObject): void => {
+      g.setNode(obj.text, {
+        label: obj.text,
+        width: 50,
+        height: 20,
+        shape: obj.type === RobustiveObjectType.Usecase ? "ellipse" : obj.type,
+        labelStyle: `font: 300 14px 'Helvetica Neue', Helvetica;fill: ${fontColor};`,
+      });
 
-    g.setNode("root", {
-      label: "",
-      width: 70,
-      height: 60,
-      shape: "actor",
-      style: "stroke: black; stroke-width: 1px; ",
-      labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
-    });
+      obj.relations?.forEach((relation) => {
+        _draw(relation.to);
 
-    g.setNode("put", {
-      label: "PUT",
-      width: 50,
-      height: 20,
-      shape: "actor",
-      style: "stroke: black; fill:blue; stroke-width: 1px; ",
-      labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
-    });
+        g.setEdge(obj.text, relation.to.text, {
+          style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+          arrowheadStyle: `fill: ${strokeColor}`,
+        });
+      });
+    };
+
+    _draw((parseResult as RobustiveParseResult).scenario);
+
+    // g.setNode("root", {
+    //   label: "",
+    //   width: 70,
+    //   height: 60,
+    //   shape: "actor",
+    //   style: "stroke: black; stroke-width: 1px; ",
+    //   labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
+    // });
+
+    // g.setNode("put", {
+    //   label: "PUT",
+    //   width: 50,
+    //   height: 20,
+    //   shape: "actor",
+    //   style: "stroke: black; fill:blue; stroke-width: 1px; ",
+    //   labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
+    // });
 
     // g.setEdge("root", "put", {
     //   curve: curveBasis,
@@ -252,13 +235,12 @@ class RobustiveRenderer implements DiagramRenderer {
     // });
 
     const root = select("body");
-    const svg = root.select(`[id="${id}"]`);
     const element = root.select("#" + id + " g");
 
     // Create the renderer
     const r = new render();
     r.shapes().actor = drawActor;
-    r.shapes().control = drawControl;
+    r.shapes().controller = drawController;
     r.shapes().entity = drawEntity;
     r.shapes().boundary = drawBoundary;
 

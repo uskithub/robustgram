@@ -1,6 +1,22 @@
 import * as d3 from "d3";
 import { intersect } from "dagre-d3-es";
 
+const BASE_STROKE_WIDTH = 1;
+
+export const DisplayMode = {
+  Dark: "dark",
+  Light: "light",
+} as const;
+
+export type DisplayMode = (typeof DisplayMode)[keyof typeof DisplayMode];
+
+function detectDisplayMode(): DisplayMode {
+  return window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? DisplayMode.Dark
+    : DisplayMode.Light;
+}
+
 export const drawActor = (
   parent: d3.Selection<SVGGElement, unknown, null, undefined>,
   bbox: { width: number; height: number },
@@ -9,10 +25,7 @@ export const drawActor = (
   const radius = 16;
 
   const strokeColor =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "white"
-      : "black";
+    detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
   const group = parent
     .append<SVGGElement>("g")
@@ -23,7 +36,7 @@ export const drawActor = (
     .attr("r", radius)
     .attr("fill", "none")
     .attr("stroke", strokeColor)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append("path")
@@ -44,7 +57,7 @@ export const drawActor = (
     )
     .attr("stroke", strokeColor)
     .attr("fill", "none")
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append<SVGTextElement>("text")
@@ -61,7 +74,7 @@ export const drawActor = (
   return group;
 };
 
-export const drawControl = (
+export const drawController = (
   parent: d3.Selection<SVGGElement, unknown, null, undefined>,
   bbox: { width: number; height: number },
   node: any
@@ -70,10 +83,7 @@ export const drawControl = (
   const arrow_size = radius / 3;
 
   const strokeColor =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "white"
-      : "black";
+    detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
   const group = parent
     .append<SVGGElement>("g")
@@ -84,7 +94,7 @@ export const drawControl = (
     .attr("r", radius)
     .attr("fill", "none")
     .attr("stroke", strokeColor)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append("path")
@@ -98,7 +108,7 @@ export const drawControl = (
     )
     .attr("stroke", strokeColor)
     .attr("fill", "none")
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append<SVGTextElement>("text")
@@ -123,10 +133,7 @@ export const drawEntity = (
   const radius = 50;
 
   const strokeColor =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "white"
-      : "black";
+    detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
   const group = parent
     .append<SVGGElement>("g")
@@ -137,7 +144,7 @@ export const drawEntity = (
     .attr("r", radius)
     .attr("fill", "none")
     .attr("stroke", strokeColor)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append("path")
@@ -150,7 +157,7 @@ export const drawEntity = (
     )
     .attr("stroke", strokeColor)
     .attr("fill", "none")
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append<SVGTextElement>("text")
@@ -175,10 +182,7 @@ export const drawBoundary = (
   const radius = 50;
 
   const strokeColor =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "white"
-      : "black";
+    detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
   const group = parent
     .append<SVGGElement>("g")
@@ -189,7 +193,7 @@ export const drawBoundary = (
     .attr("r", radius)
     .attr("fill", "none")
     .attr("stroke", strokeColor)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append("path")
@@ -204,7 +208,7 @@ export const drawBoundary = (
     )
     .attr("stroke", strokeColor)
     .attr("fill", "none")
-    .attr("stroke-width", 2);
+    .attr("stroke-width", BASE_STROKE_WIDTH);
 
   group
     .append<SVGTextElement>("text")
