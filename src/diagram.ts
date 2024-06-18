@@ -21,7 +21,7 @@ export interface DiagramRenderer {
     id: string,
     version: string,
     parseResult: ParseResult
-  ) => Promise<void>;
+  ) => void;
 }
 
 export interface ParseResult {}
@@ -121,20 +121,12 @@ export class Diagram {
   private constructor(
     public type: string,
     public text: string,
-    // public db: DiagramDB,
-    // public parser: ParserDefinition,
     public parseResult: ParseResult,
     public renderer: DiagramRenderer
   ) {}
 
   async render(id: string, version: string): Promise<void> {
-    console.log(
-      "========= render =========",
-      this.text,
-      id,
-      version,
-      this.parseResult
-    );
+    console.log("========= render =========");
     await this.renderer.draw(this.text, id, version, this.parseResult);
   }
 

@@ -10,8 +10,16 @@ import {
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
 import { graphlib, render } from "dagre-d3-es";
-import { select } from "d3";
-import { drawActor, drawBoundary, drawController, drawEntity } from "./shapes";
+import * as d3 from "d3";
+import {
+  DisplayMode,
+  detectDisplayMode,
+  drawActor,
+  drawBoundary,
+  drawController,
+  drawEntity,
+  drawUsecase,
+} from "./shapes";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -151,7 +159,7 @@ class RobustiveRenderer implements DiagramRenderer {
     id: string,
     version: string,
     parseResult: ParseResult
-  ): Promise<void> {
+  ): void {
     console.log("========= start draw =========");
     console.log("text:", text);
     console.log("parseResult:", parseResult);
@@ -159,7 +167,12 @@ class RobustiveRenderer implements DiagramRenderer {
     const g = new graphlib.Graph({
       multigraph: true,
       compound: true,
-    }).setGraph({});
+    }).setGraph({
+      nodesep: 50,
+      ranksep: 50,
+      marginx: 8,
+      marginy: 8,
+    });
 
     g.graph().rankdir = "LR";
 
@@ -169,83 +182,75 @@ class RobustiveRenderer implements DiagramRenderer {
     });
 
     const [fontColor, strokeColor] =
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? ["black", " white"]
+      detectDisplayMode() === DisplayMode.Dark
+        ? ["black", "white"]
         : ["white", "black"];
 
     const _draw = (obj: RobustiveObject): void => {
-      g.setNode(obj.text, {
-        label: obj.text,
-        width: 50,
-        height: 20,
-        shape: obj.type === RobustiveObjectType.Usecase ? "ellipse" : obj.type,
-        labelStyle: `font: 300 14px 'Helvetica Neue', Helvetica;fill: ${fontColor};`,
+      const from = obj.alias ?? obj.text;
+      g.setNode(from, {
+        shape: obj.type,
       });
 
       obj.relations?.forEach((relation) => {
         _draw(relation.to);
-
-        g.setEdge(obj.text, relation.to.text, {
-          style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-          arrowheadStyle: `fill: ${strokeColor}`,
-        });
+        const to = relation.to.alias ?? relation.to.text;
+        if (relation.type === RobustiveRelationType.Related) {
+          g.setEdge(from, to, {
+            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+            arrowhead: "undirected",
+          });
+        } else if (relation.type === RobustiveRelationType.Sequential) {
+          g.setEdge(from, to, {
+            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+            arrowhead: "vee",
+          });
+        } else {
+          g.setEdge(from, to, {
+            style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+            arrowhead: "vee",
+            label: relation.condition,
+          });
+        }
       });
     };
 
     _draw((parseResult as RobustiveParseResult).scenario);
 
-    // g.setNode("root", {
-    //   label: "",
-    //   width: 70,
-    //   height: 60,
-    //   shape: "actor",
-    //   style: "stroke: black; stroke-width: 1px; ",
-    //   labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
-    // });
-
-    // g.setNode("put", {
-    //   label: "PUT",
-    //   width: 50,
-    //   height: 20,
-    //   shape: "actor",
-    //   style: "stroke: black; fill:blue; stroke-width: 1px; ",
-    //   labelStyle: "font: 300 14px 'Helvetica Neue', Helvetica;fill: white;",
-    // });
-
-    // g.setEdge("root", "put", {
-    //   curve: curveBasis,
-    //   style:
-    //     "stroke: blue; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
-    //   arrowheadStyle: "fill: blue",
-    // });
-
-    // g.setNode("cdt", {
-    //   label: "CDT",
-    //   width: 50,
-    //   height: 20,
-    //   shape: "control",
-    // });
-
-    // g.setEdge("root", "cdt", {
-    //   curve: curveBasis,
-    //   style:
-    //     "stroke: gray; fill:none; stroke-width: 1px; stroke-dasharray: 5, 5;",
-    //   arrowheadStyle: "fill: gray",
-    // });
-
-    const root = select("body");
+    const root = d3.select("body");
+    const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
     const element = root.select("#" + id + " g");
 
     // Create the renderer
     const r = new render();
-    r.shapes().actor = drawActor;
-    r.shapes().controller = drawController;
-    r.shapes().entity = drawEntity;
-    r.shapes().boundary = drawBoundary;
+    const shapes = r.shapes();
+    shapes.actor = drawActor;
+    shapes.controller = drawController;
+    shapes.entity = drawEntity;
+    shapes.boundary = drawBoundary;
+    shapes.usecase = drawUsecase;
 
     // Run the renderer. This is what draws the final graph.
     r(element, g);
+
+    // configutr svg size
+    const node = svg.node();
+    if (node === null) {
+      return;
+    }
+    const padding = 8;
+    const bounds = node.getBBox();
+    const width = bounds.width + padding * 2;
+    const height = bounds.height + padding * 2;
+
+    svg.attr("height", height);
+    svg.attr("width", width);
+
+    const vBox = `${bounds.x - padding} ${
+      bounds.y - padding
+    } ${width} ${height}`;
+    console.log(`viewBox ${vBox}`);
+    svg.attr("viewBox", vBox);
   }
 }
 export interface RobustiveParseResult extends ParseResult {
