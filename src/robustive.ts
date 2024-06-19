@@ -285,6 +285,26 @@ class RobustiveRenderer implements DiagramRenderer {
 
       // TODO
       console.log("edgeObj", edgeObj);
+
+      const points = edgeObj.points as Array<{ x: number; y: number }>;
+      const overridePoints = [points[0], points[points.length - 1]];
+      // カスタムエッジのパスを定義
+      const line = d3
+        .line<{ x: number; y: number }>()
+        .x((d) => d.x)
+        .y((d) => d.y)
+        .curve(d3.curveLinear); // 直線
+
+      const pathData = line(overridePoints);
+
+      console.log("pathData", pathData);
+
+      // エッジパスを更新
+      svg
+        .append("path")
+        .attr("d", pathData)
+        .attr("stroke", "blue")
+        .attr("stroke-width", 2);
     });
 
     // configutr svg size
