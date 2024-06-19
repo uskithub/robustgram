@@ -576,7 +576,7 @@ describe("Parsing with robustive.jison", () => {
         --> B[Home]
     
     $checkSession -->[session dose not exist] U[User signs up](SignUp)
-                  -->[success to sign up] $shoHome`;
+                  -->[success to sign up] $showHome`;
 
         const result = await d.parse(text);
 

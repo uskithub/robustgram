@@ -187,10 +187,10 @@ class RobustiveRenderer implements DiagramRenderer {
       return {};
     });
 
-    const [fontColor, strokeColor] =
+    const [fontColor, strokeColor, labelColor] =
       detectDisplayMode() === DisplayMode.Dark
-        ? ["black", "white"]
-        : ["white", "black"];
+        ? ["black", "white", "white"]
+        : ["white", "black", "black"];
 
     const _draw = (obj: RobustiveObject): Edge[] => {
       const from = obj.alias ?? obj.text;
@@ -200,8 +200,15 @@ class RobustiveRenderer implements DiagramRenderer {
 
       return (
         obj.relations?.reduce((edges, relation) => {
-          edges = edges.concat(_draw(relation.to));
-          const to = relation.to.alias ?? relation.to.text;
+          const nextObj = relation.to;
+          let to: string;
+          if (typeof nextObj === "object") {
+            edges = edges.concat(_draw(relation.to));
+            to = nextObj.alias ?? nextObj.text;
+          } else {
+            to = nextObj;
+          }
+
           edges.push({ from, to, type: relation.type });
           const name = `${from}_${relation.type}_${to}`;
           if (relation.type === RobustiveRelationType.Related) {
@@ -224,6 +231,7 @@ class RobustiveRenderer implements DiagramRenderer {
                 // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
                 style: `stroke: red; fill:none; stroke-width: 2px;`,
                 arrowhead: "vee",
+                arrowheadStyle: `fill: ${strokeColor}`,
                 relation,
               },
               name
@@ -235,9 +243,11 @@ class RobustiveRenderer implements DiagramRenderer {
               {
                 curve: d3.curveLinear,
                 // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                style: `font-color:white;stroke: red; fill:none; stroke-width: 2px;`,
                 arrowhead: "vee",
+                arrowheadStyle: `fill: ${strokeColor}`,
                 label: relation.condition,
+                labelStyle: `fill: ${labelColor};`,
                 relation,
               },
               name

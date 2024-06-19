@@ -16,13 +16,15 @@
       </pre>
       <pre class="mermaid">
         robustive
-          A[User] --- B[iPhone's home] 
-                  --> C[App checks if the user has a session](checkSession)
-                      --- E[uuid], E[name]
-                  -->[hoge is true] U[login](login)
-          $checkSession -->[hoge is false] C[show home](showHome)
-                  --> B[Home]
-          $checkSession -->[hoge is null] $showHome
+        A[User] --- B[SignIn]
+      -->[touch button] C[App checks if the user has a session](checkSession)
+          --- E[UserInfo], E[Version]
+      -->[session exists] C[App updates signin status to 'signing-in'](updateStatus)
+      --> C[show home](showHome)
+      --> B[Home]
+  
+  $checkSession -->[session dose not exist] U[User signs up](SignUp)
+                -->[success to sign up] $showHome
       </pre>
       <pre class="">
         robustive

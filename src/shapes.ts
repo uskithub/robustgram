@@ -291,7 +291,7 @@ export const drawUsecase = (
     .attr("text-anchor", "middle")
     .attr("font-size", "16px")
     .attr("fill", strokeColor)
-    .text(node.label + "p");
+    .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
     return intersect.ellipse.intersectEllipse(node, rx, ry, point);
