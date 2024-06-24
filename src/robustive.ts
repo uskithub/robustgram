@@ -198,10 +198,12 @@ class RobustiveRenderer implements DiagramRenderer {
         shape: obj.type,
       });
 
+      let group: string | undefined;
       return (
         obj.relations?.reduce((edges, relation) => {
           const nextObj = relation.to;
           let to: string;
+
           if (typeof nextObj === "object") {
             edges = edges.concat(_draw(relation.to));
             to = nextObj.alias ?? nextObj.text;
@@ -212,6 +214,19 @@ class RobustiveRenderer implements DiagramRenderer {
           edges.push({ from, to, type: relation.type });
           const name = `${from}_${relation.type}_${to}`;
           if (relation.type === RobustiveRelationType.Related) {
+            if (
+              obj.type === RobustiveObjectType.Controller &&
+              nextObj.type === RobustiveObjectType.Entity
+            ) {
+              if (group) {
+                g.setParent(to, group);
+              } else {
+                group = `group_${from}`;
+                g.setNode(group, {});
+                g.setParent(from, group);
+                g.setParent(to, group);
+              }
+            }
             g.setEdge(
               from,
               to,
@@ -276,6 +291,9 @@ class RobustiveRenderer implements DiagramRenderer {
     // Run the renderer. This is what draws the final graph.
     r(element, g);
 
+    // カスタムエッジの描画
+    // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
+
     edges.forEach((edge) => {
       const edgeObj = g.edge(
         edge.from,
@@ -283,7 +301,6 @@ class RobustiveRenderer implements DiagramRenderer {
         `${edge.from}_${edge.type}_${edge.to}`
       );
 
-      // TODO
       console.log("edgeObj", edgeObj);
 
       const points = edgeObj.points as Array<{ x: number; y: number }>;
@@ -299,7 +316,7 @@ class RobustiveRenderer implements DiagramRenderer {
 
       console.log("pathData", pathData);
 
-      // エッジパスを更新
+      // エッジパスを更新（現状追加になっている）
       svg
         .append("path")
         .attr("d", pathData)
