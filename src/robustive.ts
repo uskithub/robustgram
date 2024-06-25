@@ -9,12 +9,13 @@ import {
 } from "./diagram";
 // @ts-ignore: JISON doesn't support types
 import parser from "./robustive.jison";
-import { graphlib, render } from "dagre-d3-es";
+import * as dagre from "dagre";
 import * as d3 from "d3";
 import {
   DisplayMode,
   detectDisplayMode,
   drawActor,
+  drawArrow,
   drawBoundary,
   drawController,
   drawEntity,
@@ -158,138 +159,156 @@ type Edge = {
   type: RobustiveRelationType;
 };
 
+type ColorConfig = {
+  font: string;
+  stroke: string;
+  label: string;
+};
+
 class RobustiveRenderer implements DiagramRenderer {
   constructor() {}
-  draw(
-    text: string,
-    id: string,
-    version: string,
-    parseResult: ParseResult
-  ): void {
-    console.log("========= start draw =========");
-    console.log("text:", text);
-    console.log("parseResult:", parseResult);
 
-    const g = new graphlib.Graph({
-      multigraph: true,
-      compound: true,
-    }).setGraph({
-      nodesep: 50,
-      ranksep: 50,
-      marginx: 8,
-      marginy: 8,
+  private recursiveAddToGraph<T>(
+    g: dagre.graphlib.Graph<T>,
+    obj: RobustiveObject,
+    colorConfig: ColorConfig = detectDisplayMode() === DisplayMode.Dark
+      ? { font: "black", stroke: "white", label: "white" }
+      : { font: "white", stroke: "black", label: "black" }
+  ): Edge[] {
+    const from = obj.alias ?? obj.text;
+    g.setNode(from, {
+      shape: obj.type,
     });
 
-    g.graph().rankdir = "LR";
+    let group: string | undefined;
+    return (
+      obj.relations?.reduce((edges, relation) => {
+        const nextObj = relation.to;
+        let to: string;
 
-    // Default to assigning a new object as a label for each new edge.
-    g.setDefaultEdgeLabel(() => {
-      return {};
-    });
+        if (typeof nextObj === "object") {
+          edges = edges.concat(
+            this.recursiveAddToGraph(g, relation.to, colorConfig)
+          );
+          to = nextObj.alias ?? nextObj.text;
+        } else {
+          to = nextObj;
+        }
 
-    const [fontColor, strokeColor, labelColor] =
-      detectDisplayMode() === DisplayMode.Dark
-        ? ["black", "white", "white"]
-        : ["white", "black", "black"];
+        edges.push({ from, to, type: relation.type });
+        const name = `${from}_${relation.type}_${to}`;
+        if (relation.type === RobustiveRelationType.Related) {
+          if (
+            obj.type === RobustiveObjectType.Controller &&
+            nextObj.type === RobustiveObjectType.Entity
+          ) {
+            // if (group) {
+            //   g.setParent(to, group);
+            // } else {
+            //   group = `group_${from}`;
+            //   g.setNode(group, {});
+            //   g.setParent(from, group);
+            //   g.setParent(to, group);
+            // }
+          }
+          g.setEdge(
+            from,
+            to,
+            {
+              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+              style: `stroke: red; fill:none; stroke-width: 2px;`,
+              arrowhead: "undirected",
+              relation,
+            },
+            name
+          );
+        } else if (relation.type === RobustiveRelationType.Sequential) {
+          g.setEdge(
+            from,
+            to,
+            {
+              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+              style: `stroke: red; fill:none; stroke-width: 2px;`,
+              arrowhead: "vee",
+              arrowheadStyle: `fill: ${colorConfig.stroke}`,
+              relation,
+            },
+            name
+          );
+        } else {
+          g.setEdge(
+            from,
+            to,
+            {
+              curve: d3.curveLinear,
+              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+              style: `font-color:white;stroke: red; fill:none; stroke-width: 2px;`,
+              arrowhead: "vee",
+              arrowheadStyle: `fill: ${colorConfig.stroke}`,
+              label: relation.condition,
+              labelStyle: `fill: ${colorConfig.label};`,
+              relation,
+            },
+            name
+          );
+        }
+        return edges;
+      }, new Array<Edge>()) ?? new Array<Edge>()
+    );
+  }
 
-    const _draw = (obj: RobustiveObject): Edge[] => {
-      const from = obj.alias ?? obj.text;
-      g.setNode(from, {
-        shape: obj.type,
+  private renderGraph<T>(
+    parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
+    g: dagre.graphlib.Graph<T>,
+    edges: Edge[]
+  ) {
+    // エッジを描画
+    const _edges = parent
+      .selectAll(".edge")
+      .data(g.edges())
+      .enter()
+      .append("g")
+      .attr("class", "edge");
+
+    _edges
+      .append("path")
+      .attr("class", "edgePath")
+      .attr("d", (d) => {
+        const points = g.edge(d).points;
+        const line = d3
+          .line()
+          .x((d) => d.x)
+          .y((d) => d.y);
+
+        return line(points);
       });
 
-      let group: string | undefined;
-      return (
-        obj.relations?.reduce((edges, relation) => {
-          const nextObj = relation.to;
-          let to: string;
+    // ノードを描画
+    const _nodes = parent
+      .selectAll(".node")
+      .data(g.nodes())
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .attr("transform", (d) => {
+        const node = g.node(d);
+        return `translate(${node.x - node.width / 2},${
+          node.y - node.height / 2
+        })`;
+      });
 
-          if (typeof nextObj === "object") {
-            edges = edges.concat(_draw(relation.to));
-            to = nextObj.alias ?? nextObj.text;
-          } else {
-            to = nextObj;
-          }
+    _nodes
+      .append("rect")
+      .attr("width", (d) => g.node(d).width)
+      .attr("height", (d) => g.node(d).height);
 
-          edges.push({ from, to, type: relation.type });
-          const name = `${from}_${relation.type}_${to}`;
-          if (relation.type === RobustiveRelationType.Related) {
-            if (
-              obj.type === RobustiveObjectType.Controller &&
-              nextObj.type === RobustiveObjectType.Entity
-            ) {
-              if (group) {
-                g.setParent(to, group);
-              } else {
-                group = `group_${from}`;
-                g.setNode(group, {});
-                g.setParent(from, group);
-                g.setParent(to, group);
-              }
-            }
-            g.setEdge(
-              from,
-              to,
-              {
-                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-                style: `stroke: red; fill:none; stroke-width: 2px;`,
-                arrowhead: "undirected",
-                relation,
-              },
-              name
-            );
-          } else if (relation.type === RobustiveRelationType.Sequential) {
-            g.setEdge(
-              from,
-              to,
-              {
-                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-                style: `stroke: red; fill:none; stroke-width: 2px;`,
-                arrowhead: "vee",
-                arrowheadStyle: `fill: ${strokeColor}`,
-                relation,
-              },
-              name
-            );
-          } else {
-            g.setEdge(
-              from,
-              to,
-              {
-                curve: d3.curveLinear,
-                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-                style: `font-color:white;stroke: red; fill:none; stroke-width: 2px;`,
-                arrowhead: "vee",
-                arrowheadStyle: `fill: ${strokeColor}`,
-                label: relation.condition,
-                labelStyle: `fill: ${labelColor};`,
-                relation,
-              },
-              name
-            );
-          }
-          return edges;
-        }, new Array<Edge>()) ?? new Array<Edge>()
-      );
-    };
-
-    const edges = _draw((parseResult as RobustiveParseResult).scenario);
-
-    const root = d3.select("body");
-    const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
-    const element = root.select("#" + id + " g");
-
-    // Create the renderer
-    const r = new render();
-    const shapes = r.shapes();
-    shapes.actor = drawActor;
-    shapes.controller = drawController;
-    shapes.entity = drawEntity;
-    shapes.boundary = drawBoundary;
-    shapes.usecase = drawUsecase;
-
-    // Run the renderer. This is what draws the final graph.
-    r(element, g);
+    _nodes
+      .append("text")
+      .attr("x", (d) => g.node(d).width / 2)
+      .attr("y", (d) => g.node(d).height / 2)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "middle")
+      .text((d) => g.node(d).label);
 
     // カスタムエッジの描画
     // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
@@ -314,17 +333,60 @@ class RobustiveRenderer implements DiagramRenderer {
 
       const pathData = line(overridePoints);
 
-      console.log("pathData", pathData);
+      console.log(`外 ${edge.from}_${edge.type}_${edge.to}`, pathData);
 
       // エッジパスを更新（現状追加になっている）
-      svg
+      parent
         .append("path")
         .attr("d", pathData)
         .attr("stroke", "blue")
         .attr("stroke-width", 2);
     });
+  }
 
-    // configutr svg size
+  draw(
+    text: string,
+    id: string,
+    version: string,
+    parseResult: ParseResult
+  ): void {
+    console.log("========= start draw =========");
+    console.log("text:", text);
+    console.log("parseResult:", parseResult);
+
+    const g = new dagre.graphlib.Graph({
+      multigraph: true,
+      compound: true,
+    }).setGraph({
+      nodesep: 50,
+      ranksep: 50,
+      marginx: 8,
+      marginy: 8,
+    });
+
+    g.graph().rankdir = "LR";
+
+    // Default to assigning a new object as a label for each new edge.
+    g.setDefaultEdgeLabel(() => {
+      return {};
+    });
+
+    const edges = this.recursiveAddToGraph(
+      g,
+      (parseResult as RobustiveParseResult).scenario
+    );
+
+    // レイアウト計算
+    dagre.layout(g);
+
+    const root = d3.select("body");
+    const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
+    const element = root.select<SVGGElement>("#" + id + " g");
+
+    // Run the renderer. This is what draws the final graph.
+    this.renderGraph(element, g, edges);
+
+    // configure svg size
     const node = svg.node();
     if (node === null) {
       return;

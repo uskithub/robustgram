@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import { intersect } from "dagre-d3-es";
 
 const BASE_STROKE_WIDTH = 1;
 
@@ -16,6 +15,73 @@ export function detectDisplayMode(): DisplayMode {
     ? DisplayMode.Dark
     : DisplayMode.Light;
 }
+
+const Intersector = {
+  ellipse: function (
+    node: any,
+    rx: number,
+    ry: number,
+    point: { x: number; y: number }
+  ) {
+    // Formulae from: http://mathworld.wolfram.com/Ellipse-LineIntersection.html
+
+    const cx = node.x;
+    const cy = node.y;
+
+    const px = cx - point.x;
+    const py = cy - point.y;
+
+    const det = Math.sqrt(rx * rx * py * py + ry * ry * px * px);
+
+    let dx = Math.abs((rx * ry * px) / det);
+    if (point.x < cx) {
+      dx = -dx;
+    }
+    let dy = Math.abs((rx * ry * py) / det);
+    if (point.y < cy) {
+      dy = -dy;
+    }
+
+    return { x: cx + dx, y: cy + dy };
+  },
+  circle: function (
+    node: any,
+    radius: number,
+    point: { x: number; y: number }
+  ) {
+    return Intersector.ellipse(node, radius, radius, point);
+  },
+  rect: function (node: any, point: { x: number; y: number }) {
+    const x = node.x;
+    const y = node.y;
+
+    // Rectangle intersection algorithm from:
+    // http://math.stackexchange.com/questions/108113/find-edge-between-two-boxes
+    const dx = point.x - x;
+    const dy = point.y - y;
+    let w = node.width / 2;
+    let h = node.height / 2;
+
+    let sx, sy;
+    if (Math.abs(dy) * w > Math.abs(dx) * h) {
+      // Intersection is top or bottom of rect.
+      if (dy < 0) {
+        h = -h;
+      }
+      sx = dy === 0 ? 0 : (h * dx) / dy;
+      sy = h;
+    } else {
+      // Intersection is left or right of rect.
+      if (dx < 0) {
+        w = -w;
+      }
+      sx = w;
+      sy = dx === 0 ? 0 : (w * dy) / dx;
+    }
+
+    return { x: x + sx, y: y + sy };
+  },
+};
 
 export const drawActor = (
   parent: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -74,7 +140,7 @@ export const drawActor = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    return intersect.rect.intersectRect(node, point);
+    return Intersector.rect(node, point);
   };
 
   return group;
@@ -126,7 +192,7 @@ export const drawController = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    return intersect.circle.intersectCircle(node, radius, point);
+    return Intersector.circle(node, radius, point);
   };
 
   return group;
@@ -176,7 +242,7 @@ export const drawEntity = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    return intersect.circle.intersectCircle(node, radius, point);
+    return Intersector.circle(node, radius, point);
   };
 
   return group;
@@ -294,7 +360,48 @@ export const drawUsecase = (
     .text(node.label);
 
   node.intersect = (point: { x: number; y: number }) => {
-    return intersect.ellipse.intersectEllipse(node, rx, ry, point);
+    return Intersector.ellipse(node, rx, ry, point);
   };
   return group;
+};
+
+/**
+ * edgeがあるが、ここで線を引いても（svg要素としてはいるのに）画面上に出てこない
+ * @param parent
+ * @param id
+ * @param edge
+ * @param type
+ */
+export const drawArrow = (
+  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  id: string,
+  edge: any,
+  type: "arrowhead"
+): void => {
+  console.log("****** よばれてるよ ******", edge);
+
+  const marker = parent
+    .append<SVGMarkerElement>("marker")
+    .attr("id", id)
+    .attr("viewBox", "0 0 10 10")
+    .attr("refX", 9)
+    .attr("refY", 5)
+    .attr("markerUnits", "strokeWidth")
+    .attr("markerWidth", 8)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto");
+
+  const path = marker
+    .append<SVGPathElement>("path")
+    .attr("d", "M 0 0 L 20 10 L 0 20 z")
+    .style("stroke-width", 1)
+    .style("stroke-dasharray", "1,0")
+    .style("fill", "#fff")
+    .style("stroke", "#fff");
+
+  if (edge["arrowheadStyle"]) {
+    path.attr("style", edge["arrowheadStyle"]);
+  } else {
+    path.attr("style", null);
+  }
 };

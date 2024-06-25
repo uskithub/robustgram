@@ -616,6 +616,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/dagre@npm:^0":
+  version: 0.7.52
+  resolution: "@types/dagre@npm:0.7.52"
+  checksum: 10c0/0e196a8c17a92765d6e28b10d78d5c1cb1ee540598428cbb61ce3b90e0fedaac2b11f6dbeebf0d2f69d5332d492b12091be5f1e575f538194e20d8887979d006
+  languageName: node
+  linkType: hard
+
 "@types/dompurify@npm:^3":
   version: 3.0.5
   resolution: "@types/dompurify@npm:3.0.5"
@@ -1273,7 +1280,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"d3@npm:^7.8.2, d3@npm:^7.9.0":
+"d3@npm:^7.9.0":
   version: 7.9.0
   resolution: "d3@npm:7.9.0"
   dependencies:
@@ -1311,13 +1318,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dagre-d3-es@npm:^7.0.10":
-  version: 7.0.10
-  resolution: "dagre-d3-es@npm:7.0.10"
+"dagre@npm:^0.8.5":
+  version: 0.8.5
+  resolution: "dagre@npm:0.8.5"
   dependencies:
-    d3: "npm:^7.8.2"
-    lodash-es: "npm:^4.17.21"
-  checksum: 10c0/3e1bb6efe9a78cea3fe6ff265eb330692f057bf84c99d6a1d67db379231c37a1a1ca2e1ccc25a732ddf924cd5566062c033d88defd230debec324dc9256c6775
+    graphlib: "npm:^2.1.8"
+    lodash: "npm:^4.17.15"
+  checksum: 10c0/1c021b66961aa9a700bb6ec51747bcc214720a661ad6cb1878eab7316ecb550a759664a6754081a315b37d0355e3c19ff162813b36f20cbeb2e37f7440364d62
   languageName: node
   linkType: hard
 
@@ -1654,6 +1661,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"graphlib@npm:^2.1.8":
+  version: 2.1.8
+  resolution: "graphlib@npm:2.1.8"
+  dependencies:
+    lodash: "npm:^4.17.15"
+  checksum: 10c0/41c525e4d91a6d8b4e8da1883bf4e85689a547e908557ccc53f64db9141bdfb351b9162a79f13cae81c5b3a410027f59e4fc1edc1ea442234ec08e629859b188
+  languageName: node
+  linkType: hard
+
 "has-color@npm:~0.1.0":
   version: 0.1.7
   resolution: "has-color@npm:0.1.7"
@@ -1867,10 +1883,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash-es@npm:^4.17.21":
+"lodash@npm:^4.17.15":
   version: 4.17.21
-  resolution: "lodash-es@npm:4.17.21"
-  checksum: 10c0/fb407355f7e6cd523a9383e76e6b455321f0f153a6c9625e21a8827d10c54c2a2341bd2ae8d034358b60e07325e1330c14c224ff582d04612a46a4f0479ff2f2
+  resolution: "lodash@npm:4.17.21"
+  checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
   languageName: node
   linkType: hard
 
@@ -2285,12 +2301,13 @@ __metadata:
   resolution: "robustgram@workspace:."
   dependencies:
     "@types/d3": "npm:^7"
+    "@types/dagre": "npm:^0"
     "@types/dompurify": "npm:^3"
     "@types/katex": "npm:^0"
     "@types/node": "npm:^20.14.2"
     "@types/stylis": "npm:^4"
     d3: "npm:^7.9.0"
-    dagre-d3-es: "npm:^7.0.10"
+    dagre: "npm:^0.8.5"
     dompurify: "npm:^3.1.4"
     jison: "npm:^0.4.18"
     katex: "npm:^0.16.10"
