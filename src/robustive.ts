@@ -262,26 +262,53 @@ class RobustiveRenderer implements DiagramRenderer {
     g: dagre.graphlib.Graph<T>,
     edges: Edge[]
   ) {
+    g.nodes().forEach((id) => {
+      const node = g.node(id);
+      console.log("node", node);
+      switch (node.shape) {
+        case RobustiveObjectType.Actor: {
+          drawActor(parent, { width: 200, height: 100 }, node);
+          break;
+        }
+        case RobustiveObjectType.Boundary: {
+          drawBoundary(parent, { width: 100, height: 100 }, node);
+          break;
+        }
+        case RobustiveObjectType.Controller: {
+          drawController(parent, { width: 100, height: 100 }, node);
+          break;
+        }
+        case RobustiveObjectType.Entity: {
+          drawEntity(parent, { width: 100, height: 100 }, node);
+          break;
+        }
+        case RobustiveObjectType.Usecase: {
+          drawUsecase(parent, { width: 100, height: 100 }, node);
+          break;
+        }
+      }
+    });
+
     // エッジを描画
-    const _edges = parent
-      .selectAll(".edge")
-      .data(g.edges())
-      .enter()
-      .append("g")
-      .attr("class", "edge");
+    // const _edges = parent
+    //   .selectAll(".edge")
+    //   .data(g.edges())
+    //   .enter()
+    //   .append("g")
+    //   .attr("class", "edge");
 
-    _edges
-      .append("path")
-      .attr("class", "edgePath")
-      .attr("d", (d) => {
-        const points = g.edge(d).points;
-        const line = d3
-          .line()
-          .x((d) => d.x)
-          .y((d) => d.y);
+    // _edges
+    //   .append("path")
+    //   .attr("class", "edgePath")
+    //   .attr("d", (d) => {
+    //     const points = g.edge(d).points;
+    //     const line = d3
+    //       .line()
+    //       .x((d) => d.x)
+    //       .y((d) => d.y);
 
-        return line(points);
-      });
+    //     return line(points);
+    //   });
 
     // ノードを描画
     const _nodes = parent
