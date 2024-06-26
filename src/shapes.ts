@@ -84,7 +84,7 @@ const Intersector = {
 };
 
 export const drawActor = (
-  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
@@ -147,7 +147,7 @@ export const drawActor = (
 };
 
 export const drawController = (
-  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
@@ -199,7 +199,7 @@ export const drawController = (
 };
 
 export const drawEntity = (
-  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
@@ -249,7 +249,7 @@ export const drawEntity = (
 };
 
 export const drawBoundary = (
-  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
@@ -327,7 +327,7 @@ export const drawBoundary = (
 };
 
 export const drawUsecase = (
-  parent: d3.Selection<SVGGElement, unknown, null, undefined>,
+  parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
   bbox: { width: number; height: number },
   node: any
 ): d3.Selection<SVGGElement, unknown, null, undefined> => {
