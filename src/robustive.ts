@@ -12,9 +12,6 @@ import parser from "./robustive.jison";
 import * as dagre from "dagre";
 import * as d3 from "d3";
 import {
-  DisplayMode,
-  detectDisplayMode,
-  drawActor,
   drawArrow,
   drawBoundary,
   drawController,
@@ -165,13 +162,159 @@ type ColorConfig = {
   label: string;
 };
 
+const DisplayMode = {
+  Dark: "dark",
+  Light: "light",
+} as const;
+
+type DisplayMode = (typeof DisplayMode)[keyof typeof DisplayMode];
+
+const BASE_STROKE_WIDTH = 1;
+
 class RobustiveRenderer implements DiagramRenderer {
+  static Intersector = {
+    ellipse: function (
+      node: any,
+      rx: number,
+      ry: number,
+      point: { x: number; y: number }
+    ) {
+      // Formulae from: http://mathworld.wolfram.com/Ellipse-LineIntersection.html
+
+      const cx = node.x;
+      const cy = node.y;
+
+      const px = cx - point.x;
+      const py = cy - point.y;
+
+      const det = Math.sqrt(rx * rx * py * py + ry * ry * px * px);
+
+      let dx = Math.abs((rx * ry * px) / det);
+      if (point.x < cx) {
+        dx = -dx;
+      }
+      let dy = Math.abs((rx * ry * py) / det);
+      if (point.y < cy) {
+        dy = -dy;
+      }
+
+      return { x: cx + dx, y: cy + dy };
+    },
+    circle: function (
+      node: any,
+      radius: number,
+      point: { x: number; y: number }
+    ) {
+      return RobustiveRenderer.Intersector.ellipse(node, radius, radius, point);
+    },
+    rect: function (node: any, point: { x: number; y: number }) {
+      const x = node.x;
+      const y = node.y;
+
+      // Rectangle intersection algorithm from:
+      // http://math.stackexchange.com/questions/108113/find-edge-between-two-boxes
+      const dx = point.x - x;
+      const dy = point.y - y;
+      let w = node.width / 2;
+      let h = node.height / 2;
+
+      let sx, sy;
+      if (Math.abs(dy) * w > Math.abs(dx) * h) {
+        // Intersection is top or bottom of rect.
+        if (dy < 0) {
+          h = -h;
+        }
+        sx = dy === 0 ? 0 : (h * dx) / dy;
+        sy = h;
+      } else {
+        // Intersection is left or right of rect.
+        if (dx < 0) {
+          w = -w;
+        }
+        sx = w;
+        sy = dx === 0 ? 0 : (w * dy) / dx;
+      }
+
+      return { x: x + sx, y: y + sy };
+    },
+  };
+
   constructor() {}
+
+  private detectDisplayMode(): DisplayMode {
+    return window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? DisplayMode.Dark
+      : DisplayMode.Light;
+  }
+
+  private renderActor(
+    parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
+    bbox: { width: number; height: number },
+    node: any
+  ): d3.Selection<SVGGElement, unknown, HTMLElement, undefined> {
+    // デフォルトのラベル要素を削除
+    parent.selectAll("g.label").remove();
+
+    const radius = 16;
+    const adjust_y = -20;
+
+    const strokeColor =
+      this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
+
+    const group = parent
+      .append<SVGGElement>("g")
+      .attr("transform", `translate(0, ${adjust_y})`);
+
+    group
+      .append<SVGCircleElement>("circle")
+      .attr("r", radius)
+      .attr("fill", "none")
+      .attr("stroke", strokeColor)
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    const neck = radius * 1.8;
+    const body = radius * 3.2;
+    group
+      .append("path")
+      .attr(
+        "d",
+        d3.line()([
+          [-radius * 1.6, radius * 1.6],
+          [0, neck],
+          [0, radius],
+          [0, body],
+          [-radius * 1.4, radius * 5],
+          [0, body],
+          [radius * 1.4, radius * 5],
+          [0, body],
+          [0, neck],
+          [radius * 1.6, radius * 1.6],
+        ])
+      )
+      .attr("stroke", strokeColor)
+      .attr("fill", "none")
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    group
+      .append<SVGTextElement>("text")
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("fill", strokeColor)
+      .text(node.label);
+
+    node.intersect = (point: { x: number; y: number }) => {
+      return RobustiveRenderer.Intersector.rect(node, point);
+    };
+
+    return group;
+  }
 
   private recursiveAddToGraph<T>(
     g: dagre.graphlib.Graph<T>,
     obj: RobustiveObject,
-    colorConfig: ColorConfig = detectDisplayMode() === DisplayMode.Dark
+    colorConfig: ColorConfig = this.detectDisplayMode() === DisplayMode.Dark
       ? { font: "black", stroke: "white", label: "white" }
       : { font: "white", stroke: "black", label: "black" }
   ): Edge[] {
@@ -262,12 +405,13 @@ class RobustiveRenderer implements DiagramRenderer {
     g: dagre.graphlib.Graph<T>,
     edges: Edge[]
   ) {
+    /*
     g.nodes().forEach((id) => {
       const node = g.node(id);
       console.log("node", node);
       switch (node.shape) {
         case RobustiveObjectType.Actor: {
-          drawActor(parent, { width: 200, height: 100 }, node);
+          this.renderActor(parent, { width: 200, height: 100 }, node);
           break;
         }
         case RobustiveObjectType.Boundary: {
@@ -288,7 +432,7 @@ class RobustiveRenderer implements DiagramRenderer {
         }
       }
     });
-
+    */
     // エッジを描画
     // const _edges = parent
     //   .selectAll(".edge")
@@ -313,29 +457,31 @@ class RobustiveRenderer implements DiagramRenderer {
     // ノードを描画
     const _nodes = parent
       .selectAll(".node")
-      .data(g.nodes())
+      .data(
+        g.nodes().map((id) => {
+          const node = g.node(id);
+          node.width = 100;
+          node.height = 100;
+          node.label = id;
+          return node;
+        })
+      )
       .enter()
       .append("g")
       .attr("class", "node")
-      .attr("transform", (d) => {
-        const node = g.node(d);
+      .attr("transform", (node) => {
         return `translate(${node.x - node.width / 2},${
           node.y - node.height / 2
         })`;
       });
 
     _nodes
-      .append("rect")
-      .attr("width", (d) => g.node(d).width)
-      .attr("height", (d) => g.node(d).height);
-
-    _nodes
       .append("text")
-      .attr("x", (d) => g.node(d).width / 2)
-      .attr("y", (d) => g.node(d).height / 2)
+      .attr("x", (node) => node.width / 2)
+      .attr("y", (node) => node.height / 2)
       .attr("dy", ".35em")
       .attr("text-anchor", "middle")
-      .text((d) => g.node(d).label);
+      .text((node) => node.label || "");
 
     // カスタムエッジの描画
     // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
