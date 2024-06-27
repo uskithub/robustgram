@@ -18,6 +18,7 @@ import {
   drawEntity,
   drawUsecase,
 } from "./shapes";
+import { H } from "vitest/dist/reporters-yx5ZTtEV.js";
 
 type RobustiveRelation = {
   type: RobustiveRelationType;
@@ -171,6 +172,12 @@ type DisplayMode = (typeof DisplayMode)[keyof typeof DisplayMode];
 
 const BASE_STROKE_WIDTH = 1;
 
+type RobustiveNode = {
+  objectType: RobustiveObjectType;
+  label?: string;
+  explanation?: string;
+};
+
 class RobustiveRenderer implements DiagramRenderer {
   static Intersector = {
     ellipse: function (
@@ -248,14 +255,65 @@ class RobustiveRenderer implements DiagramRenderer {
       : DisplayMode.Light;
   }
 
+  private render(
+    selection: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      HTMLElement,
+      unknown
+    >
+  ) {
+    const radius = 16;
+    const adjust_y = -20;
+
+    const strokeColor =
+      this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
+
+    selection
+      .append<SVGCircleElement>("circle")
+      .attr("r", radius)
+      .attr("fill", "none")
+      .attr("stroke", strokeColor)
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    const neck = radius * 1.8;
+    const body = radius * 3.2;
+
+    selection
+      .append("path")
+      .attr(
+        "d",
+        d3.line()([
+          [-radius * 1.6, radius * 1.6],
+          [0, neck],
+          [0, radius],
+          [0, body],
+          [-radius * 1.4, radius * 5],
+          [0, body],
+          [radius * 1.4, radius * 5],
+          [0, body],
+          [0, neck],
+          [radius * 1.6, radius * 1.6],
+        ])
+      )
+      .attr("stroke", strokeColor)
+      .attr("fill", "none")
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append<SVGTextElement>("text")
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("fill", strokeColor)
+      .text((node) => node.label || "");
+  }
+
   private renderActor(
-    parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
+    parent: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
     bbox: { width: number; height: number },
     node: any
   ): d3.Selection<SVGGElement, unknown, HTMLElement, undefined> {
-    // デフォルトのラベル要素を削除
-    parent.selectAll("g.label").remove();
-
     const radius = 16;
     const adjust_y = -20;
 
@@ -311,17 +369,19 @@ class RobustiveRenderer implements DiagramRenderer {
     return group;
   }
 
-  private recursiveAddToGraph<T>(
-    g: dagre.graphlib.Graph<T>,
+  private recursiveAddToGraph(
+    g: dagre.graphlib.Graph<RobustiveNode>,
     obj: RobustiveObject,
     colorConfig: ColorConfig = this.detectDisplayMode() === DisplayMode.Dark
       ? { font: "black", stroke: "white", label: "white" }
       : { font: "white", stroke: "black", label: "black" }
   ): Edge[] {
     const from = obj.alias ?? obj.text;
-    g.setNode(from, {
-      shape: obj.type,
-    });
+    const node: RobustiveNode = {
+      objectType: obj.type,
+      label: from,
+    };
+    g.setNode(from, node);
 
     let group: string | undefined;
     return (
@@ -400,39 +460,16 @@ class RobustiveRenderer implements DiagramRenderer {
     );
   }
 
-  private renderGraph<T>(
-    parent: d3.Selection<SVGGElement, unknown, HTMLElement, undefined>,
-    g: dagre.graphlib.Graph<T>,
+  private renderGraph(
+    parent: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      HTMLElement,
+      any
+    >,
+    g: dagre.graphlib.Graph<RobustiveNode>,
     edges: Edge[]
   ) {
-    /*
-    g.nodes().forEach((id) => {
-      const node = g.node(id);
-      console.log("node", node);
-      switch (node.shape) {
-        case RobustiveObjectType.Actor: {
-          this.renderActor(parent, { width: 200, height: 100 }, node);
-          break;
-        }
-        case RobustiveObjectType.Boundary: {
-          drawBoundary(parent, { width: 100, height: 100 }, node);
-          break;
-        }
-        case RobustiveObjectType.Controller: {
-          drawController(parent, { width: 100, height: 100 }, node);
-          break;
-        }
-        case RobustiveObjectType.Entity: {
-          drawEntity(parent, { width: 100, height: 100 }, node);
-          break;
-        }
-        case RobustiveObjectType.Usecase: {
-          drawUsecase(parent, { width: 100, height: 100 }, node);
-          break;
-        }
-      }
-    });
-    */
     // エッジを描画
     // const _edges = parent
     //   .selectAll(".edge")
@@ -453,10 +490,11 @@ class RobustiveRenderer implements DiagramRenderer {
 
     //     return line(points);
     //   });
+    const _self = this;
 
     // ノードを描画
-    const _nodes = parent
-      .selectAll(".node")
+    const nodes = parent
+      .selectAll<SVGGElement, dagre.Node<T>, SVGGElement, unknown>(".node")
       .data(
         g.nodes().map((id) => {
           const node = g.node(id);
@@ -473,15 +511,36 @@ class RobustiveRenderer implements DiagramRenderer {
         return `translate(${node.x - node.width / 2},${
           node.y - node.height / 2
         })`;
+      })
+      .each(function (node) {
+        // Do not use arrow function because of `this`
+        const selection = d3.select(this);
+        switch (node.shape) {
+          case RobustiveObjectType.Actor: {
+            selection.call(_self.render);
+            this.renderActor(parent, { width: 200, height: 100 }, node);
+            break;
+          }
+          case RobustiveObjectType.Boundary: {
+            drawBoundary(parent, { width: 100, height: 100 }, node);
+            break;
+          }
+          case RobustiveObjectType.Controller: {
+            drawController(parent, { width: 100, height: 100 }, node);
+            break;
+          }
+          case RobustiveObjectType.Entity: {
+            drawEntity(parent, { width: 100, height: 100 }, node);
+            break;
+          }
+          case RobustiveObjectType.Usecase: {
+            drawUsecase(parent, { width: 100, height: 100 }, node);
+            break;
+          }
+        }
       });
 
-    _nodes
-      .append("text")
-      .attr("x", (node) => node.width / 2)
-      .attr("y", (node) => node.height / 2)
-      .attr("dy", ".35em")
-      .attr("text-anchor", "middle")
-      .text((node) => node.label || "");
+    nodes.call(this.render.bind(this));
 
     // カスタムエッジの描画
     // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
@@ -527,7 +586,7 @@ class RobustiveRenderer implements DiagramRenderer {
     console.log("text:", text);
     console.log("parseResult:", parseResult);
 
-    const g = new dagre.graphlib.Graph({
+    const g = new dagre.graphlib.Graph<RobustiveNode>({
       multigraph: true,
       compound: true,
     }).setGraph({
@@ -552,7 +611,16 @@ class RobustiveRenderer implements DiagramRenderer {
     // レイアウト計算
     dagre.layout(g);
 
-    const root = d3.select("body");
+    /**
+     * A D3 Selection of elements.
+     *
+     * The first generic "GElement" refers to the type of the selected element(s).
+     * The second generic "Datum" refers to the type of the datum of a selected element(s).
+     * The third generic "PElement" refers to the type of the parent element(s) in the D3 selection.
+     * The fourth generic "PDatum" refers to the type of the datum of the parent element(s).
+     */
+
+    const root = d3.select<HTMLElement, dagre.Node<RobustiveNode>>("body");
     const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
     const element = root.select<SVGGElement>("#" + id + " g");
 
