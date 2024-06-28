@@ -481,7 +481,7 @@ class RobustiveRenderer implements DiagramRenderer {
     colorConfig: ColorConfig = this.detectDisplayMode() === DisplayMode.Dark
       ? { font: "black", stroke: "white", label: "white" }
       : { font: "white", stroke: "black", label: "black" }
-  ): Edge[] {
+  ): (string | string[])[][] {
     const from = obj.alias ?? obj.text;
     const node: RobustiveNode = {
       objectType: obj.type,
@@ -491,67 +491,100 @@ class RobustiveRenderer implements DiagramRenderer {
     };
     g.setNode(from, node);
 
-    return (
-      obj.relations?.reduce((edges, relation) => {
-        const nextObj = relation.to;
-        let to: string;
+    const depthSpread =
+      obj.relations?.reduce(
+        (depthSpread, relation) => {
+          const nextObj = relation.to;
+          let to: string;
 
-        if (typeof nextObj === "object") {
-          edges = edges.concat(
-            this.recursiveAddToGraph(g, relation.to, depth + 1, colorConfig)
-          );
-          to = nextObj.alias ?? nextObj.text;
-        } else {
-          to = nextObj;
-        }
+          if (typeof nextObj === "object") {
+            if (
+              relation.type === RobustiveRelationType.Related &&
+              obj.type === RobustiveObjectType.Controller &&
+              nextObj.type === RobustiveObjectType.Entity
+            ) {
+              depthSpread[depth].push([nextObj.text]);
+            } else {
+              const nextDepthSpread = this.recursiveAddToGraph(
+                g,
+                relation.to,
+                depth + 1,
+                colorConfig
+              );
+              if (depthSpread.length < nextDepthSpread.length) {
+                depthSpread = nextDepthSpread.map((v, idx) =>
+                  v.concat(depthSpread[idx] ?? [])
+                );
+              } else {
+                depthSpread = depthSpread.map((v, idx) =>
+                  v.concat(nextDepthSpread[idx] ?? [])
+                );
+              }
+            }
 
-        edges.push({ from, to, type: relation.type });
-        const name = `${from}_${relation.type}_${to}`;
-        if (relation.type === RobustiveRelationType.Related) {
-          g.setEdge(
-            from,
-            to,
-            {
-              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-              style: `stroke: red; fill:none; stroke-width: 2px;`,
-              arrowhead: "undirected",
-              relation,
-            },
-            name
-          );
-        } else if (relation.type === RobustiveRelationType.Sequential) {
-          g.setEdge(
-            from,
-            to,
-            {
-              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-              style: `stroke: red; fill:none; stroke-width: 2px;`,
-              arrowhead: "vee",
-              arrowheadStyle: `fill: ${colorConfig.stroke}`,
-              relation,
-            },
-            name
-          );
-        } else {
-          g.setEdge(
-            from,
-            to,
-            {
-              curve: d3.curveLinear,
-              // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
-              style: `font-color:white;stroke: red; fill:none; stroke-width: 2px;`,
-              arrowhead: "vee",
-              arrowheadStyle: `fill: ${colorConfig.stroke}`,
-              label: relation.condition,
-              labelStyle: `fill: ${colorConfig.label};`,
-              relation,
-            },
-            name
-          );
-        }
-        return edges;
-      }, new Array<Edge>()) ?? new Array<Edge>()
-    );
+            to = nextObj.alias ?? nextObj.text;
+          } else {
+            to = nextObj;
+          }
+
+          const name = `${from}_${relation.type}_${to}`;
+          if (relation.type === RobustiveRelationType.Related) {
+            g.setEdge(
+              from,
+              to,
+              {
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "undirected",
+                relation,
+              },
+              name
+            );
+          } else if (relation.type === RobustiveRelationType.Sequential) {
+            g.setEdge(
+              from,
+              to,
+              {
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "vee",
+                arrowheadStyle: `fill: ${colorConfig.stroke}`,
+                relation,
+              },
+              name
+            );
+          } else {
+            g.setEdge(
+              from,
+              to,
+              {
+                curve: d3.curveLinear,
+                // style: `stroke: ${strokeColor}; fill:none; stroke-width: 1px;`,
+                style: `font-color:white;stroke: red; fill:none; stroke-width: 2px;`,
+                arrowhead: "vee",
+                arrowheadStyle: `fill: ${colorConfig.stroke}`,
+                label: relation.condition,
+                labelStyle: `fill: ${colorConfig.label};`,
+                relation,
+              },
+              name
+            );
+          }
+          console.log("$$$$$ depth", depth, "depthSpread", depthSpread, to);
+          return depthSpread;
+        },
+        Array.from<string, (string | string[])[]>(
+          { length: depth + 1 },
+          () => []
+        )
+      ) ??
+      Array.from<string, (string | string[])[]>(
+        { length: depth + 1 },
+        () => []
+      );
+
+    depthSpread[depth].push(from);
+    return depthSpread;
   }
 
   private renderGraph(
@@ -676,15 +709,37 @@ class RobustiveRenderer implements DiagramRenderer {
       return {};
     });
 
-    const edges = this.recursiveAddToGraph(
+    const depthSpread = this.recursiveAddToGraph(
       g,
       (parseResult as RobustiveParseResult).scenario
     );
 
     // レイアウト計算
-    dagre.layout(g);
-
-    console.log("***", g);
+    // dagre.layout(g);
+    //   [
+    //     [
+    //         "User"
+    //     ],
+    //     [
+    //         "SignIn"
+    //     ],
+    //     [
+    //         "checkSession"
+    //     ],
+    //     [
+    //         "updateStatus",
+    //         "UserInfo",
+    //         "Version",
+    //         "SignUp"
+    //     ],
+    //     [
+    //         "showHome"
+    //     ],
+    //     [
+    //         "Home"
+    //     ]
+    // ]
+    console.log("*** depthSpread ***", depthSpread);
 
     g.nodes().forEach((id) => {
       const node = g.node(id);
@@ -705,7 +760,7 @@ class RobustiveRenderer implements DiagramRenderer {
     const gElem = root.select<SVGGElement>("#" + id + " g");
 
     // Run the renderer. This is what draws the final graph.
-    this.renderGraph(gElem, g, edges);
+    // this.renderGraph(gElem, g, edges);
 
     // configure svg size
     const node = svg.node();
