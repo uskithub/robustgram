@@ -577,7 +577,7 @@ class RobustiveRenderer implements DiagramRenderer {
 
     // ノードを描画
     const nodes = parent
-      .selectAll<SVGGElement, dagre.Node<RobustiveNode>>(".node")
+      .selectAll()
       .data(
         g.nodes().map((id) => {
           const node = g.node(id);
@@ -685,7 +685,7 @@ class RobustiveRenderer implements DiagramRenderer {
     version: string,
     parseResult: ParseResult
   ): void {
-    console.log("========= start draw =========");
+    console.log("========= start draw =========", id);
     console.log("text:", text);
     console.log("parseResult:", parseResult);
 
@@ -711,6 +711,8 @@ class RobustiveRenderer implements DiagramRenderer {
       (parseResult as RobustiveParseResult).scenario
     );
 
+    console.log("***", g);
+
     // レイアウト計算
     dagre.layout(g);
 
@@ -725,10 +727,10 @@ class RobustiveRenderer implements DiagramRenderer {
 
     const root = d3.select<HTMLElement, dagre.Node<RobustiveNode>>("body");
     const svg = root.select<SVGGraphicsElement>(`[id="${id}"]`);
-    const element = root.select<SVGGElement>("#" + id + " g");
+    const gElem = root.select<SVGGElement>("#" + id + " g");
 
     // Run the renderer. This is what draws the final graph.
-    this.renderGraph(element, g, edges);
+    this.renderGraph(gElem, g, edges);
 
     // configure svg size
     const node = svg.node();
