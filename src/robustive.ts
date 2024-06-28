@@ -174,6 +174,8 @@ const BASE_STROKE_WIDTH = 1;
 
 type RobustiveNode = {
   objectType: RobustiveObjectType;
+  x?: number;
+  y?: number;
   label?: string;
   explanation?: string;
 };
@@ -475,6 +477,7 @@ class RobustiveRenderer implements DiagramRenderer {
   private recursiveAddToGraph(
     g: dagre.graphlib.Graph<RobustiveNode>,
     obj: RobustiveObject,
+    depth: number = 0,
     colorConfig: ColorConfig = this.detectDisplayMode() === DisplayMode.Dark
       ? { font: "black", stroke: "white", label: "white" }
       : { font: "white", stroke: "black", label: "black" }
@@ -482,11 +485,12 @@ class RobustiveRenderer implements DiagramRenderer {
     const from = obj.alias ?? obj.text;
     const node: RobustiveNode = {
       objectType: obj.type,
+      x: 0,
+      y: 99,
       label: from,
     };
     g.setNode(from, node);
 
-    let group: string | undefined;
     return (
       obj.relations?.reduce((edges, relation) => {
         const nextObj = relation.to;
@@ -494,7 +498,7 @@ class RobustiveRenderer implements DiagramRenderer {
 
         if (typeof nextObj === "object") {
           edges = edges.concat(
-            this.recursiveAddToGraph(g, relation.to, colorConfig)
+            this.recursiveAddToGraph(g, relation.to, depth + 1, colorConfig)
           );
           to = nextObj.alias ?? nextObj.text;
         } else {
@@ -504,19 +508,6 @@ class RobustiveRenderer implements DiagramRenderer {
         edges.push({ from, to, type: relation.type });
         const name = `${from}_${relation.type}_${to}`;
         if (relation.type === RobustiveRelationType.Related) {
-          if (
-            obj.type === RobustiveObjectType.Controller &&
-            nextObj.type === RobustiveObjectType.Entity
-          ) {
-            // if (group) {
-            //   g.setParent(to, group);
-            // } else {
-            //   group = `group_${from}`;
-            //   g.setNode(group, {});
-            //   g.setParent(from, group);
-            //   g.setParent(to, group);
-            // }
-          }
           g.setEdge(
             from,
             to,
@@ -625,58 +616,37 @@ class RobustiveRenderer implements DiagramRenderer {
       });
 
     // エッジを描画
-    // const _edges = parent
-    //   .selectAll(".edge")
-    //   .data(g.edges())
-    //   .enter()
-    //   .append("g")
-    //   .attr("class", "edge");
+    const _edges = parent
+      .selectAll()
+      .data(g.edges())
+      .enter()
+      .append("g")
+      .attr("class", "edge")
+      .each(function (node) {
+        // Do not use arrow function because of `this`
+        const edgeObj = g.edge(node);
+        const selection = d3.select<SVGGElement, dagre.Node<RobustiveNode>>(
+          this
+        );
 
-    // _edges
-    //   .append("path")
-    //   .attr("class", "edgePath")
-    //   .attr("d", (d) => {
-    //     const points = g.edge(d).points;
-    //     const line = d3
-    //       .line()
-    //       .x((d) => d.x)
-    //       .y((d) => d.y);
+        const points = edgeObj.points as Array<{ x: number; y: number }>;
+        const overridePoints = [points[0], points[points.length - 1]];
 
-    //     return line(points);
-    //   });
+        // カスタムエッジのパスを定義
+        const line = d3
+          .line<{ x: number; y: number }>()
+          .x((d) => d.x)
+          .y((d) => d.y)
+          .curve(d3.curveLinear); // 直線
 
-    // カスタムエッジの描画
-    // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
+        const pathData = line(overridePoints);
 
-    edges.forEach((edge) => {
-      const edgeObj = g.edge(
-        edge.from,
-        edge.to,
-        `${edge.from}_${edge.type}_${edge.to}`
-      );
-
-      console.log("edgeObj", edgeObj);
-
-      const points = edgeObj.points as Array<{ x: number; y: number }>;
-      const overridePoints = [points[0], points[points.length - 1]];
-      // カスタムエッジのパスを定義
-      const line = d3
-        .line<{ x: number; y: number }>()
-        .x((d) => d.x)
-        .y((d) => d.y)
-        .curve(d3.curveLinear); // 直線
-
-      const pathData = line(overridePoints);
-
-      console.log(`外 ${edge.from}_${edge.type}_${edge.to}`, pathData);
-
-      // エッジパスを更新（現状追加になっている）
-      parent
-        .append("path")
-        .attr("d", pathData)
-        .attr("stroke", "blue")
-        .attr("stroke-width", 2);
-    });
+        selection
+          .append("path")
+          .attr("d", pathData)
+          .attr("stroke", "red")
+          .attr("stroke-width", 2);
+      });
   }
 
   draw(
@@ -711,10 +681,15 @@ class RobustiveRenderer implements DiagramRenderer {
       (parseResult as RobustiveParseResult).scenario
     );
 
-    console.log("***", g);
-
     // レイアウト計算
     dagre.layout(g);
+
+    console.log("***", g);
+
+    g.nodes().forEach((id) => {
+      const node = g.node(id);
+      console.log("***", node);
+    });
 
     /**
      * A D3 Selection of elements.
