@@ -255,12 +255,12 @@ class RobustiveRenderer implements DiagramRenderer {
       : DisplayMode.Light;
   }
 
-  private render(
+  private renderActor(
     selection: d3.Selection<
       SVGGElement,
       dagre.Node<RobustiveNode>,
-      HTMLElement,
-      unknown
+      null,
+      undefined
     >
   ) {
     const radius = 16;
@@ -309,64 +309,167 @@ class RobustiveRenderer implements DiagramRenderer {
       .text((node) => node.label || "");
   }
 
-  private renderActor(
-    parent: d3.Selection<SVGGElement, unknown, HTMLElement, any>,
-    bbox: { width: number; height: number },
-    node: any
-  ): d3.Selection<SVGGElement, unknown, HTMLElement, undefined> {
-    const radius = 16;
-    const adjust_y = -20;
+  private renderController(
+    selection: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      null,
+      undefined
+    >
+  ) {
+    const radius = 50;
+    const arrow_size = radius / 3;
 
     const strokeColor =
       this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
 
-    const group = parent
-      .append<SVGGElement>("g")
-      .attr("transform", `translate(0, ${adjust_y})`);
-
-    group
+    selection
       .append<SVGCircleElement>("circle")
       .attr("r", radius)
       .attr("fill", "none")
       .attr("stroke", strokeColor)
       .attr("stroke-width", BASE_STROKE_WIDTH);
 
-    const neck = radius * 1.8;
-    const body = radius * 3.2;
-    group
+    selection
       .append("path")
       .attr(
         "d",
         d3.line()([
-          [-radius * 1.6, radius * 1.6],
-          [0, neck],
-          [0, radius],
-          [0, body],
-          [-radius * 1.4, radius * 5],
-          [0, body],
-          [radius * 1.4, radius * 5],
-          [0, body],
-          [0, neck],
-          [radius * 1.6, radius * 1.6],
+          [arrow_size, -(radius + arrow_size / 2)],
+          [0, -radius],
+          [arrow_size, -(radius - arrow_size / 2)],
         ])
       )
       .attr("stroke", strokeColor)
       .attr("fill", "none")
       .attr("stroke-width", BASE_STROKE_WIDTH);
 
-    group
+    selection
       .append<SVGTextElement>("text")
       .attr("y", 5)
       .attr("text-anchor", "middle")
       .attr("font-size", "16px")
       .attr("fill", strokeColor)
-      .text(node.label);
+      .text((node) => node.label || "");
+  }
 
-    node.intersect = (point: { x: number; y: number }) => {
-      return RobustiveRenderer.Intersector.rect(node, point);
-    };
+  private renderEntity(
+    selection: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      null,
+      undefined
+    >
+  ) {
+    const radius = 50;
 
-    return group;
+    const strokeColor =
+      this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
+
+    selection
+      .append<SVGCircleElement>("circle")
+      .attr("r", radius)
+      .attr("fill", "none")
+      .attr("stroke", strokeColor)
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append("path")
+      .attr(
+        "d",
+        d3.line()([
+          [(radius / 10) * 9, radius],
+          [(-radius / 10) * 9, radius],
+        ])
+      )
+      .attr("stroke", strokeColor)
+      .attr("fill", "none")
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append<SVGTextElement>("text")
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("fill", strokeColor)
+      .text((node) => node.label || "");
+  }
+
+  private renderBoundary(
+    selection: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      null,
+      undefined
+    >
+  ) {
+    const radius = 50;
+    const gap = (radius / 10) * 3;
+
+    const strokeColor =
+      this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
+
+    selection
+      .append<SVGCircleElement>("circle")
+      .attr("r", radius)
+      .attr("fill", "none")
+      .attr("stroke", strokeColor)
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append("path")
+      .attr(
+        "d",
+        d3.line()([
+          [-(radius + gap), (radius / 10) * 8],
+          [-(radius + gap), (-radius / 10) * 8],
+          [-(radius + gap), 0],
+          [-radius, 0],
+        ])
+      )
+      .attr("stroke", strokeColor)
+      .attr("fill", "none")
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append<SVGTextElement>("text")
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("fill", strokeColor)
+      .text((node) => node.label || "");
+  }
+
+  private renderUsecase(
+    selection: d3.Selection<
+      SVGGElement,
+      dagre.Node<RobustiveNode>,
+      null,
+      undefined
+    >
+  ) {
+    const radius = 50;
+    const rx = radius * 1.6;
+    const ry = radius * 1.1;
+
+    const strokeColor =
+      this.detectDisplayMode() === DisplayMode.Dark ? "white" : "black";
+
+    selection
+      .append<SVGEllipseElement>("ellipse")
+      .attr("rx", rx)
+      .attr("ry", ry)
+      .attr("fill", "none")
+      .attr("stroke", strokeColor)
+      .attr("stroke-width", BASE_STROKE_WIDTH);
+
+    selection
+      .append<SVGTextElement>("text")
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("fill", strokeColor)
+      .text((node) => node.label || "");
   }
 
   private recursiveAddToGraph(
@@ -470,6 +573,57 @@ class RobustiveRenderer implements DiagramRenderer {
     g: dagre.graphlib.Graph<RobustiveNode>,
     edges: Edge[]
   ) {
+    const _self = this;
+
+    // ノードを描画
+    const nodes = parent
+      .selectAll<SVGGElement, dagre.Node<RobustiveNode>>(".node")
+      .data(
+        g.nodes().map((id) => {
+          const node = g.node(id);
+          node.width = 100;
+          node.height = 100;
+          return node;
+        })
+      )
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .attr("transform", (node) => {
+        return `translate(${node.x - node.width / 2},${
+          node.y - node.height / 2
+        })`;
+      })
+      .each(function (node) {
+        // Do not use arrow function because of `this`
+        const selection = d3.select<SVGGElement, dagre.Node<RobustiveNode>>(
+          this
+        );
+
+        switch (node.objectType) {
+          case RobustiveObjectType.Actor: {
+            _self.renderActor(selection);
+            break;
+          }
+          case RobustiveObjectType.Boundary: {
+            _self.renderBoundary(selection);
+            break;
+          }
+          case RobustiveObjectType.Controller: {
+            _self.renderController(selection);
+            break;
+          }
+          case RobustiveObjectType.Entity: {
+            _self.renderEntity(selection);
+            break;
+          }
+          case RobustiveObjectType.Usecase: {
+            _self.renderUsecase(selection);
+            break;
+          }
+        }
+      });
+
     // エッジを描画
     // const _edges = parent
     //   .selectAll(".edge")
@@ -490,57 +644,6 @@ class RobustiveRenderer implements DiagramRenderer {
 
     //     return line(points);
     //   });
-    const _self = this;
-
-    // ノードを描画
-    const nodes = parent
-      .selectAll<SVGGElement, dagre.Node<T>, SVGGElement, unknown>(".node")
-      .data(
-        g.nodes().map((id) => {
-          const node = g.node(id);
-          node.width = 100;
-          node.height = 100;
-          node.label = id;
-          return node;
-        })
-      )
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .attr("transform", (node) => {
-        return `translate(${node.x - node.width / 2},${
-          node.y - node.height / 2
-        })`;
-      })
-      .each(function (node) {
-        // Do not use arrow function because of `this`
-        const selection = d3.select(this);
-        switch (node.shape) {
-          case RobustiveObjectType.Actor: {
-            selection.call(_self.render);
-            this.renderActor(parent, { width: 200, height: 100 }, node);
-            break;
-          }
-          case RobustiveObjectType.Boundary: {
-            drawBoundary(parent, { width: 100, height: 100 }, node);
-            break;
-          }
-          case RobustiveObjectType.Controller: {
-            drawController(parent, { width: 100, height: 100 }, node);
-            break;
-          }
-          case RobustiveObjectType.Entity: {
-            drawEntity(parent, { width: 100, height: 100 }, node);
-            break;
-          }
-          case RobustiveObjectType.Usecase: {
-            drawUsecase(parent, { width: 100, height: 100 }, node);
-            break;
-          }
-        }
-      });
-
-    nodes.call(this.render.bind(this));
 
     // カスタムエッジの描画
     // @see: https://dagrejs.github.io/project/dagre-d3/latest/demo/user-defined.html
